@@ -47,9 +47,7 @@ class Server(threading.Thread):
                         second = random.randint(0, len(nodes) - 1)
                         if second != first:
                             break
-                    msg = "TAKE 2 %s %d %s %s %d %s" % (
-                        nodes[first].ip, nodes[first].port, nodes[first].username, nodes[second].ip, nodes[second].port,
-                        nodes[second].username)
+                    msg = "TAKE 2 %s %d %s %s %d %s" % (nodes[first].ip, nodes[first].port, nodes[first].username, nodes[second].ip, nodes[second].port, nodes[second].username)
                     print(msg)
                     return msg
         else:
@@ -125,7 +123,7 @@ def attach_length(message):
     return "%04d %s" % (length, message)
 
 
-my_ip = netifaces.ifaddresses('eth0')[netifaces.AF_INET][0]['addr']  # you need to change eth0 accordingly.
+my_ip = netifaces.ifaddresses('wlp3s0')[netifaces.AF_INET][0]['addr']  # you need to change eth0 accordingly.
 my_port = get_available_port(my_ip)
 my_name = "".join([random.choice(string.ascii_letters) for i in range(5)])
 my_address = Address(my_ip, my_port, my_name)
@@ -264,15 +262,16 @@ def addNewNode(address):
 def takeIPsOfPeer(msgRet):
     print("msg recieved: %s"%(msgRet))
     res = msgRet.split()
-    if msgRet[1].lower() == 'take':
-        peerCount = int(msgRet[2])
+    if res[1].lower() == 'take':
+        print("ABCcccccccccccccccccccccccccc")
+        peerCount = int(res[2])
         if peerCount == 2:
-            print("Count 2: %s %s %s | %s %s %s"%(msgRet[3], msgRet[4], msgRet[5], msgRet[6], msgRet[7], msgRet[8]))
-            addNewNode(Address(msgRet[3], msgRet[4], msgRet[5]))
-            addNewNode(Address(msgRet[6], msgRet[7], msgRet[8]))
+            print("Count 2: %s %s %s | %s %s %s"%(res[3], res[4], res[5], res[6], res[7], res[8]))
+            addNewNode(Address(res[3], res[4], res[5]))
+            addNewNode(Address(res[6], res[7], res[8]))
         elif peerCount == 1:
-            print("Count 1: %s %s %s"%(msgRet[3], msgRet[4], msgRet[5]))
-            addNewNode(Address(msgRet[3], msgRet[4], msgRet[5]))
+            print("Count 1: %s %s %s"%(res[3], res[4], res[5]))
+            addNewNode(Address(res[3], res[4], res[5]))
 
 
 class Gather(threading.Thread):
