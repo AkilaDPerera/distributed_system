@@ -12,7 +12,7 @@ import time
 class Address():
     def __init__(self, ip, port, username=""):
         self.ip = ip
-        self.port = port
+        self.port = int(port)
         self.username = username
 
     def __eq__(self, other):
@@ -47,7 +47,9 @@ class Server(threading.Thread):
                         second = random.randint(0, len(nodes) - 1)
                         if second != first:
                             break
-                    msg = "TAKE 2 %s %d %s %s %d %s" % (nodes[first].ip, nodes[first].port, nodes[first].username, nodes[second].ip, nodes[second].port, nodes[second].username)
+                    msg = "TAKE 2 %s %d %s %s %d %s" % (
+                    nodes[first].ip, nodes[first].port, nodes[first].username, nodes[second].ip, nodes[second].port,
+                    nodes[second].username)
                     print(msg)
                     return msg
         else:
@@ -234,9 +236,9 @@ def query():
 
     if command == "show":
         show_neighbours()
-    
+
     elif command == "my":
-        print("My Ip: %s %d %s"%(my_ip, my_port, my_name))
+        print("My Ip: %s %d %s" % (my_ip, my_port, my_name))
 
     elif command.startswith("hi"):
         cmd_list = command.split()
@@ -260,18 +262,18 @@ def addNewNode(address):
 
 
 def takeIPsOfPeer(msgRet):
-    print("msg recieved: %s"%(msgRet))
+    print("msg recieved: %s" % (msgRet))
     res = msgRet.split()
     if res[1].lower() == 'take':
         print("ABCcccccccccccccccccccccccccc")
         peerCount = int(res[2])
         if peerCount == 2:
-            print("Count 2: %s %s %s | %s %s %s"%(res[3], res[4], res[5], res[6], res[7], res[8]))
-            addNewNode(Address(res[3], res[4], res[5]))
-            addNewNode(Address(res[6], res[7], res[8]))
+            print("Count 2: %s %s %s | %s %s %s" % (res[3], res[4], res[5], res[6], res[7], res[8]))
+            addNewNode(Address(res[3], int(res[4]), res[5]))
+            addNewNode(Address(res[6], int(res[7]), res[8]))
         elif peerCount == 1:
-            print("Count 1: %s %s %s"%(res[3], res[4], res[5]))
-            addNewNode(Address(res[3], res[4], res[5]))
+            print("Count 1: %s %s %s" % (res[3], res[4], res[5]))
+            addNewNode(Address(res[3], int(res[4]), res[5]))
 
 
 class Gather(threading.Thread):
