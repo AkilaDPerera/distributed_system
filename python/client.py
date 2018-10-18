@@ -172,7 +172,7 @@ def unreg(address):
     # Unregister from boostrap
     with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
         s.connect((HOST, PORT))
-        reg_msg = "UNREG %s %d"%(address.ip, address.port)
+        reg_msg = "UNREG %s %d %s"%(address.ip, address.port, address.username)
         s.sendall(attach_length(reg_msg).encode())
 
 
