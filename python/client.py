@@ -33,7 +33,7 @@ class Server(threading.Thread):
     def decodeMessage(self, message):
         res = message.split()
         if res[1].lower() == 'give':
-            address = Address(res[2], res[3], res[4])
+            address = Address(res[2], int(res[3]), res[4])
             addNewNode(address)
             if len(nodes) > 0:
                 if len(nodes) == 1:
@@ -67,7 +67,7 @@ class Server(threading.Thread):
                 print("Message received: '%s' \t Address received: %s:%d" % (
                     incoming_msg, incoming_address, incoming_port))
 
-                server.sendto(attach_length(decode_reg_response(incoming_msg)).encode(), address)
+                server.sendto(attach_length(self.decodeMessage(incoming_msg)).encode(), address)
 
 
 def decode_reg_response(response):
@@ -122,7 +122,8 @@ def attach_length(message):
     length = len(message) + 5
     return "%04d %s" % (length, message)
 
-my_ip = netifaces.ifaddresses('eth0')[netifaces.AF_INET][0]['addr']  # you need to change eth0 accordingly.
+
+my_ip = netifaces.ifaddresses('wlp3s0')[netifaces.AF_INET][0]['addr']  # you need to change eth0 accordingly.
 my_port = get_available_port(my_ip)
 my_name = "".join([random.choice(string.ascii_letters) for i in range(5)])
 my_address = Address(my_ip, my_port, my_name)
@@ -207,7 +208,7 @@ def sendMessage(msg, address, retFun):
             try:
                 connection.sendto(attach_length(msg).encode(), (address.ip, address.port))
                 res, address = connection.recvfrom(buffer_size)
-                # call retFun
+                retFun(res.decode())
                 break
             except:
                 print(shy)
@@ -215,6 +216,7 @@ def sendMessage(msg, address, retFun):
         else:
             unreg(address)
             nodes.remove(address)
+
 
 def show_neighbours():
     print(nodes)
@@ -264,21 +266,23 @@ def takeIPsOfPeer(msgRet):
         elif peerCount == 1:
             addNewNode(Address(msgRet[3], msgRet[4], msgRet[5]))
 
-    class Gather(threading.Thread):
-        buffer_size = 2048
 
-        def __init__(self):
-            threading.Thread.__init__(self)
+class Gather(threading.Thread):
+    buffer_size = 2048
 
-        def run(self):
-            print("Gossiping solution start...")
-            while True:
-                if len(nodes) >= nodeLimit:
-                    break
-                if len(nodes) > 0:
-                    address = nodes[random.randint(0, len(nodes) - 1)]
-                    msg = "GIVE %s %d %s" % (my_ip, my_port, my_name)
-                    sendMessage(msg, address, takeIPsOfPeer)
-                time.sleep(3)
+    def __init__(self):
+        threading.Thread.__init__(self)
 
-    main()
+    def run(self):
+        print("Gossiping solution start...")
+        while True:
+            if len(nodes) >= nodeLimit:
+                break
+            if len(nodes) > 0:
+                address = nodes[random.randint(0, len(nodes) - 1)]
+                msg = "GIVE %s %d %s" % (my_ip, my_port, my_name)
+                sendMessage(msg, address, takeIPsOfPeer)
+            time.sleep(3)
+
+
+main()
