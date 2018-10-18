@@ -5,6 +5,7 @@ import random
 import threading
 import netifaces
 import string
+import sys
 
 class Address():
     def __init__(self, ip, port, username=""):
@@ -92,10 +93,30 @@ def attach_length(message):
 
 
 
-my_ip = netifaces.ifaddresses('eth0')[netifaces.AF_INET][0]['addr']
+my_ip = netifaces.ifaddresses('eth0')[netifaces.AF_INET][0]['addr'] # you need to change eth0 accordingly.
 my_port = get_available_port(my_ip)
 my_name = "".join([random.choice(string.ascii_letters) for i in range(5)])
 my_address = Address(my_ip, my_port, my_name)
+
+# Boostrap server config
+HOST = my_ip
+PORT = 65000
+if len(sys.argv)==3:
+    # port and ip given
+    try:
+        PORT = int(sys.argv[1])
+        HOST = sys.argv[2].strip()
+    except:
+        print("Error in input parameters")
+        exit(0)
+elif len(sys.argv)==2:
+    # port given
+    try:
+        PORT = int(sys.argv[1])
+
+    except:
+        print("Error in input parameters")
+        exit(0)
 
 nodes = []
 
@@ -109,8 +130,6 @@ def main():
     server_thread.start()
 
     # Registration with bootstrap
-    HOST = '192.168.8.103'
-    PORT = 65000 # The port used by the boostrap server
     with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
         s.connect((HOST, PORT))
         reg_msg = "REG %s %d %s"%(my_address.ip, my_address.port, my_address.username)
