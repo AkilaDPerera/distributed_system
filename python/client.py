@@ -188,7 +188,7 @@ def sendMessage(msg, address, retFun):
             try: 
                 connection.sendto(attach_length(msg).encode(), (address.ip, address.port))
                 res, address = connection.recvfrom(buffer_size)
-                #call retFun
+                retFun(res.decode())
                 break
             except:
                 pass
@@ -231,7 +231,7 @@ def addNewNode(address):
         if node.ip==address.ip and node.port==address.port:
             exist=True
             break
-    if not exist:
+    if (not exist) and address!=my_address:
         nodes.append(address)
 
 def takeIPsOfPeer(msgRet):
