@@ -123,8 +123,13 @@ class Gossiping(threading.Thread):
         print("Gossiping solution start...")
         while True:
             if len(nodes) >= node_limit:
-                # isactive request should be here
-                time.sleep(6)
+                # isactive request should be here                                          TODO
+                res = self.request_addresses() # response = None | ACTIVEOK | IPs
+                if (res!=None):
+                    if res.split()[1]!="ACTIVEOK":
+                        self.update_nodes(res)
+                time.sleep(3)
+
             elif len(nodes) < node_limit:
                 res = self.request_addresses() # response = None | ACTIVEOK | IPs
                 if (res!=None):
@@ -133,6 +138,7 @@ class Gossiping(threading.Thread):
                 time.sleep(3)
 
 def unreg(address):
+    global nodes
     # Unregister from boostrap
     with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
         s.connect((HOST, PORT))
@@ -232,12 +238,6 @@ def show_neighbours():
 def show_me():
     print("My Details: %s %d %s" % (my_ip, my_port, my_name))
 
-def hi(neighbour):
-    # Say hi to node
-    with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as connection:
-        req = "Hi, I am %s. What is name?" % (my_address.username)
-        connection.sendto(req.encode(), (neighbour.ip, neighbour.port))
-
 def query():
     command = input("Enter your command: ").strip().lower()
 
@@ -245,15 +245,6 @@ def query():
         show_neighbours()
     elif command=="my":
         show_me()
-    elif command.startswith("hi"):
-        cmd_list = command.split()
-        try:
-            ip = cmd_list[1]
-            port = int(cmd_list[2])
-            neighbour = Address(ip, port)
-            hi(neighbour)
-        except:
-            print("Wrong syntax...")
 
 my_ip = netifaces.ifaddresses('eth0')[netifaces.AF_INET][0]['addr']  # you need to change eth0 accordingly.
 my_port = get_available_port(my_ip)
