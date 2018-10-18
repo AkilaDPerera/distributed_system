@@ -156,18 +156,11 @@ def main():
                 nodes = addresses
     # Registration with bootstrap done
 
-<<<<<<< efa32c31c5667a9b8befaaf513ced21bbfeea34a
-=======
-    # Start the client-side server
-    server_thread = Server(client_nodes[client_no])
-    server_thread.start()
-
     gosip=Gather()
     gosip.start()
 
     print("continue main thread...")
 
->>>>>>> Gather operation firs phase
     while True:
         query()
 
