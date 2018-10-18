@@ -99,17 +99,6 @@ def attach_length(message):
     length = len(message) + 5
     return "%04d %s" % (length, message)
 
-
-def sendMessage(msg, address, retFun):
-
-
-# send msg to client
-# wait for it. If msg come send it to funcion
-# if msg didn' come send msg again
-# if still response don't  come send msg again
-# if sill no response unregiter than node in server
-
-
 my_ip = netifaces.ifaddresses('eth0')[netifaces.AF_INET][0]['addr']  # you need to change eth0 accordingly.
 my_port = get_available_port(my_ip)
 my_name = "".join([random.choice(string.ascii_letters) for i in range(5)])
@@ -178,6 +167,34 @@ def main():
 
     while True:
         query()
+
+def unreg(address):
+    # Unregister from boostrap
+    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+        s.connect((HOST, PORT))
+        reg_msg = "UNREG %s %d"%(address.ip, address.port)
+        s.sendall(attach_length(reg_msg).encode())
+
+
+def sendMessage(msg, address, retFun):
+    # send msg to client
+    # wait for it. If msg come send it to funcion
+    # if msg didn' come send msg again
+    # if still response don't  come send msg again
+    # if sill no response unregiter than node in server
+    with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as connection:
+        connection.settimeout(3)
+        for shy in range(2):
+            try:
+                req = "Hi"
+                connection.sendto(req.encode(), (address.ip, address.port))
+                res, address = connection.recvfrom(buffer_size)
+                break
+            except:
+                pass
+        else:
+            unreg(address)
+
 
 
 def show_neighbours():
