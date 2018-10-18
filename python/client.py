@@ -16,7 +16,7 @@ class Address():
         self.username = username
 
     def __eq__(self, other):
-        return self.ip == other.ip and self.port == other.ip and self.username == other.username
+        return self.ip == other.ip and self.port == other.port and self.username == other.username
 
     def __repr__(self):
         return "%s %d" % (self.ip, self.port)
@@ -263,7 +263,7 @@ def addNewNode(address):
 
 def takeIPsOfPeer(msgRet):
     print("msg recieved: %s" % (msgRet))
-    res = msgRet.split()
+    res = msgRet.strip().split()
     if res[1].lower() == 'take':
         print("ABCcccccccccccccccccccccccccc")
         peerCount = int(res[2])
