@@ -152,7 +152,7 @@ nodes = []
 
 buffer_size = 2048
 
-nodeLimit = 5
+nodeLimit = 3
 
 
 def main():
@@ -277,6 +277,7 @@ class Gather(threading.Thread):
         print("Gossiping solution start...")
         while True:
             if len(nodes) >= nodeLimit:
+                print("gossip end triggered")
                 break
             if len(nodes) > 0:
                 address = nodes[random.randint(0, len(nodes) - 1)]
