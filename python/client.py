@@ -38,6 +38,7 @@ class Server(threading.Thread):
             if len(nodes) > 0:
                 if len(nodes) == 1:
                     msg = "TAKE 1 %s %d %s" % (nodes[0].ip, nodes[0].port, nodes[0].username)
+                    print(msg)
                     return msg
                 else:
                     first = random.randint(0, len(nodes) - 1)
@@ -49,6 +50,7 @@ class Server(threading.Thread):
                     msg = "TAKE 2 %s %d %s %s %d %s" % (
                         nodes[first].ip, nodes[first].port, nodes[first].username, nodes[second].ip, nodes[second].port,
                         nodes[second].username)
+                    print(msg)
                     return msg
         else:
             return "Hi"
