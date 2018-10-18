@@ -7,6 +7,7 @@ import netifaces
 import string
 import sys
 
+
 class Address():
     def __init__(self, ip, port, username=""):
         self.ip = ip
@@ -14,10 +15,11 @@ class Address():
         self.username = username
 
     def __eq__(self, other):
-        return self.ip==other.ip and self.port==other.ip and self.username==other.username
-    
+        return self.ip == other.ip and self.port == other.ip and self.username == other.username
+
     def __repr__(self):
-        return "%s %d"%(self.ip, self.port)
+        return "%s %d" % (self.ip, self.port)
+
 
 class Server(threading.Thread):
     buffer_size = 2048
@@ -38,7 +40,8 @@ class Server(threading.Thread):
                 incoming_address = address[0]
                 incoming_port = int(address[1])
 
-                print("Message received: '%s' \t Address received: %s:%d"%(incoming_msg, incoming_address, incoming_port))
+                print("Message received: '%s' \t Address received: %s:%d" % (
+                incoming_msg, incoming_address, incoming_port))
 
                 # server.sendto(response.encode(), address)
 
@@ -56,13 +59,13 @@ def decode_reg_response(response):
     # 9997 – failed, registered to another user, try a different IP and port
     # 9996 – failed, can’t register. BS full.
 
-    if num_addresses==9999:
+    if num_addresses == 9999:
         return 0, "Failed, There is an error in the command"
-    elif num_addresses==9998:
+    elif num_addresses == 9998:
         return 0, "Failed, Already registered to you, unregister first"
-    elif num_addresses==9997:
+    elif num_addresses == 9997:
         return 0, "Failed, Registered to another user, try a different IP and Port"
-    elif num_addresses==9996:
+    elif num_addresses == 9996:
         return 0, "Failed, Cannot register. BS full."
     else:
         # Here is the success case
@@ -72,8 +75,9 @@ def decode_reg_response(response):
             port = int(res.pop(0))
             username = res.pop(0)
             addresses.append(Address(ip, port, username))
-        
+
         return 1, addresses
+
 
 def get_available_port(ip):
     init_port = 6000
@@ -86,17 +90,23 @@ def get_available_port(ip):
             result = True
             break
         except:
-            init_port+=1
+            init_port += 1
     return init_port
 
+
 def attach_length(message):
-    length = len(message)+5
-    return "%04d %s"%(length, message)
+    length = len(message) + 5
+    return "%04d %s" % (length, message)
+
+def sendMessage(msg,address,retFun):
+    # send msg to client
+    # wait for it. If msg come send it to funcion
+    # if msg didn' come send msg again
+    # if still response don't  come send msg again
+    # if sill no response unregiter than node in server
 
 
-
-
-my_ip = netifaces.ifaddresses('eth0')[netifaces.AF_INET][0]['addr'] # you need to change eth0 accordingly.
+my_ip = netifaces.ifaddresses('eth0')[netifaces.AF_INET][0]['addr']  # you need to change eth0 accordingly.
 my_port = get_available_port(my_ip)
 my_name = "".join([random.choice(string.ascii_letters) for i in range(5)])
 my_address = Address(my_ip, my_port, my_name)
@@ -104,7 +114,7 @@ my_address = Address(my_ip, my_port, my_name)
 # Boostrap server config
 HOST = my_ip
 PORT = 65000
-if len(sys.argv)==3:
+if len(sys.argv) == 3:
     # port and ip given
     try:
         PORT = int(sys.argv[1])
@@ -112,7 +122,7 @@ if len(sys.argv)==3:
     except:
         print("Error in input parameters")
         exit(0)
-elif len(sys.argv)==2:
+elif len(sys.argv) == 2:
     # port given
     try:
         PORT = int(sys.argv[1])
@@ -127,6 +137,7 @@ buffer_size = 2048
 
 nodeLimit = 5
 
+
 def main():
     global nodes
 
@@ -137,26 +148,26 @@ def main():
     # Registration with bootstrap
     with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
         s.connect((HOST, PORT))
-        reg_msg = "REG %s %d %s"%(my_address.ip, my_address.port, my_address.username)
+        reg_msg = "REG %s %d %s" % (my_address.ip, my_address.port, my_address.username)
         s.sendall(attach_length(reg_msg).encode())
         data = s.recv(buffer_size).decode()
 
         isSuccess, addresses = decode_reg_response(data)
 
         if isSuccess:
-            if len(addresses)>2:
+            if len(addresses) > 2:
                 # Select two random links
-                address_1 = random.randint(0, len(addresses)-1)
-                address_2 = random.randint(0, len(addresses)-1)
-                while address_1==address_2:
-                    address_2 = random.randint(0, len(addresses)-1)
+                address_1 = random.randint(0, len(addresses) - 1)
+                address_2 = random.randint(0, len(addresses) - 1)
+                while address_1 == address_2:
+                    address_2 = random.randint(0, len(addresses) - 1)
                 nodes.append(addresses[address_1])
                 nodes.append(addresses[address_2])
             else:
                 nodes = addresses
     # Registration with bootstrap done
 
-    gosip=Gather()
+    gosip = Gather()
     gosip.start()
 
     print("continue main thread...")
@@ -165,20 +176,21 @@ def main():
         query()
 
 
-
 def show_neighbours():
     print(nodes)
+
 
 def hi(neighbour):
     # Say hi to node
     with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as connection:
-        req = "Hi, I am %s. What is name?"%(my_address.username)
+        req = "Hi, I am %s. What is name?" % (my_address.username)
         connection.sendto(req.encode(), (neighbour.ip, neighbour.port))
+
 
 def query():
     command = input("Enter your command: ").strip().lower()
 
-    if command=="show":
+    if command == "show":
         show_neighbours()
 
     elif command.startswith("hi"):
@@ -191,6 +203,7 @@ def query():
         except:
             print("Wrong syntax...")
 
+
 class Gather(threading.Thread):
     buffer_size = 2048
 
@@ -199,7 +212,9 @@ class Gather(threading.Thread):
 
     def run(self):
         print("Gossiping solution start...")
-
+        while True:
+            address1 = random.randint(0, len(nodes) - 1)
+            msg = "GIVE %s %d" % (my_ip, my_port)
 
 
 
