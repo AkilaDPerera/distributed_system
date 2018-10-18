@@ -6,6 +6,7 @@ import threading
 import netifaces
 import string
 import sys
+import time
 
 
 class Address():
@@ -41,7 +42,7 @@ class Server(threading.Thread):
                 incoming_port = int(address[1])
 
                 print("Message received: '%s' \t Address received: %s:%d" % (
-                incoming_msg, incoming_address, incoming_port))
+                    incoming_msg, incoming_address, incoming_port))
 
                 # server.sendto(response.encode(), address)
 
@@ -98,12 +99,15 @@ def attach_length(message):
     length = len(message) + 5
     return "%04d %s" % (length, message)
 
-def sendMessage(msg,address,retFun):
-    # send msg to client
-    # wait for it. If msg come send it to funcion
-    # if msg didn' come send msg again
-    # if still response don't  come send msg again
-    # if sill no response unregiter than node in server
+
+def sendMessage(msg, address, retFun):
+
+
+# send msg to client
+# wait for it. If msg come send it to funcion
+# if msg didn' come send msg again
+# if still response don't  come send msg again
+# if sill no response unregiter than node in server
 
 
 my_ip = netifaces.ifaddresses('eth0')[netifaces.AF_INET][0]['addr']  # you need to change eth0 accordingly.
@@ -203,7 +207,25 @@ def query():
         except:
             print("Wrong syntax...")
 
+
+def addNewNode(address):
+    exist = False
+    for node in nodes:
+        if node.ip==address.ip and node.port==address.port:
+            exist=True
+            break
+    if not exist:
+        nodes.append(address)
+
 def takeIPsOfPeer(msgRet):
+    res = msgRet.split()
+    if msgRet[1].lower() == 'take':
+        peerCount = int(msgRet[2])
+        if peerCount == 2:
+            addNewNode(Address(msgRet[3], msgRet[4]))
+            addNewNode(Address(msgRet[5], msgRet[6]))
+        elif peerCount == 1:
+            addNewNode(Address(msgRet[3], msgRet[4]))
 
 
 class Gather(threading.Thread):
@@ -215,9 +237,12 @@ class Gather(threading.Thread):
     def run(self):
         print("Gossiping solution start...")
         while True:
+            if len(nodes) >= nodeLimit:
+                break
             address = random.randint(0, len(nodes) - 1)
             msg = "GIVE %s %d" % (my_ip, my_port)
-            sendMessage(msg,address,takeIPsOfPeer);
+            sendMessage(msg, address, takeIPsOfPeer)
+            time.sleep(3)
 
 
 main()
