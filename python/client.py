@@ -185,10 +185,10 @@ def sendMessage(msg, address, retFun):
     with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as connection:
         connection.settimeout(3)
         for shy in range(2):
-            try:
-                req = "Hi"
-                connection.sendto(req.encode(), (address.ip, address.port))
+            try: 
+                connection.sendto(attach_length(msg).encode(), (address.ip, address.port))
                 res, address = connection.recvfrom(buffer_size)
+                #call retFun
                 break
             except:
                 pass
@@ -256,7 +256,7 @@ class Gather(threading.Thread):
         while True:
             if len(nodes) >= nodeLimit:
                 break
-            address = random.randint(0, len(nodes) - 1)
+            address = nodes[random.randint(0, len(nodes) - 1)]
             msg = "GIVE %s %d" % (my_ip, my_port)
             sendMessage(msg, address, takeIPsOfPeer)
             time.sleep(3)
