@@ -122,8 +122,7 @@ def attach_length(message):
     length = len(message) + 5
     return "%04d %s" % (length, message)
 
-
-my_ip = netifaces.ifaddresses('wlp3s0')[netifaces.AF_INET][0]['addr']  # you need to change eth0 accordingly.
+my_ip = netifaces.ifaddresses('eth0')[netifaces.AF_INET][0]['addr']  # you need to change eth0 accordingly.
 my_port = get_available_port(my_ip)
 my_name = "".join([random.choice(string.ascii_letters) for i in range(5)])
 my_address = Address(my_ip, my_port, my_name)
@@ -202,24 +201,20 @@ def unreg(address):
 
 
 def sendMessage(msg, address, retFun):
-    # send msg to client
-    # wait for it. If msg come send it to funcion
-    # if msg didn' come send msg again
-    # if still response don't  come send msg again
-    # if sill no response unregiter than node in server
     with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as connection:
         connection.settimeout(3)
         for shy in range(2):
             try:
                 connection.sendto(attach_length(msg).encode(), (address.ip, address.port))
                 res, address = connection.recvfrom(buffer_size)
-                retFun(res.decode())
+                # call retFun
                 break
             except:
+                print(shy)
                 pass
         else:
             unreg(address)
-
+            nodes.remove(address)
 
 def show_neighbours():
     print(nodes)
