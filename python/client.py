@@ -203,6 +203,8 @@ def query():
         except:
             print("Wrong syntax...")
 
+def takeIPsOfPeer(msgRet):
+
 
 class Gather(threading.Thread):
     buffer_size = 2048
@@ -213,9 +215,9 @@ class Gather(threading.Thread):
     def run(self):
         print("Gossiping solution start...")
         while True:
-            address1 = random.randint(0, len(nodes) - 1)
+            address = random.randint(0, len(nodes) - 1)
             msg = "GIVE %s %d" % (my_ip, my_port)
-
+            sendMessage(msg,address,takeIPsOfPeer);
 
 
 main()
