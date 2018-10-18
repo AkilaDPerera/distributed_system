@@ -125,7 +125,7 @@ def attach_length(message):
     return "%04d %s" % (length, message)
 
 
-my_ip = netifaces.ifaddresses('wlp3s0')[netifaces.AF_INET][0]['addr']  # you need to change eth0 accordingly.
+my_ip = netifaces.ifaddresses('eth0')[netifaces.AF_INET][0]['addr']  # you need to change eth0 accordingly.
 my_port = get_available_port(my_ip)
 my_name = "".join([random.choice(string.ascii_letters) for i in range(5)])
 my_address = Address(my_ip, my_port, my_name)
@@ -236,6 +236,9 @@ def query():
 
     if command == "show":
         show_neighbours()
+    
+    elif command == "my":
+        print("My Ip: %s %d %s"%(my_ip, my_port, my_name))
 
     elif command.startswith("hi"):
         cmd_list = command.split()
@@ -259,13 +262,16 @@ def addNewNode(address):
 
 
 def takeIPsOfPeer(msgRet):
+    print("msg recieved: %s"%(msgRet))
     res = msgRet.split()
     if msgRet[1].lower() == 'take':
         peerCount = int(msgRet[2])
         if peerCount == 2:
+            print("Count 2: %s %s %s | %s %s %s"%(msgRet[3], msgRet[4], msgRet[5], msgRet[6], msgRet[7], msgRet[8]))
             addNewNode(Address(msgRet[3], msgRet[4], msgRet[5]))
             addNewNode(Address(msgRet[6], msgRet[7], msgRet[8]))
         elif peerCount == 1:
+            print("Count 1: %s %s %s"%(msgRet[3], msgRet[4], msgRet[5]))
             addNewNode(Address(msgRet[3], msgRet[4], msgRet[5]))
 
 
