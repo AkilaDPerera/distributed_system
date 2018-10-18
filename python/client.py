@@ -16,7 +16,7 @@ class Address():
         self.username = username
 
     def __eq__(self, other):
-        return self.ip == other.ip and self.port == other.port and self.username == other.username
+        return self.ip == other.ip and self.port == other.port
 
     def __repr__(self):
         return "%s %d" % (self.ip, self.port)
@@ -48,8 +48,8 @@ class Server(threading.Thread):
                         if second != first:
                             break
                     msg = "TAKE 2 %s %d %s %s %d %s" % (
-                    nodes[first].ip, nodes[first].port, nodes[first].username, nodes[second].ip, nodes[second].port,
-                    nodes[second].username)
+                        nodes[first].ip, nodes[first].port, nodes[first].username, nodes[second].ip, nodes[second].port,
+                        nodes[second].username)
                     print(msg)
                     return msg
         else:
@@ -265,7 +265,6 @@ def takeIPsOfPeer(msgRet):
     print("msg recieved: %s" % (msgRet))
     res = msgRet.strip().split()
     if res[1].lower() == 'take':
-        print("ABCcccccccccccccccccccccccccc")
         peerCount = int(res[2])
         if peerCount == 2:
             print("Count 2: %s %s %s | %s %s %s" % (res[3], res[4], res[5], res[6], res[7], res[8]))
@@ -285,14 +284,11 @@ class Gather(threading.Thread):
     def run(self):
         print("Gossiping solution start...")
         while True:
-            if len(nodes) >= nodeLimit:
-                print("gossip end triggered")
-                break
-            if len(nodes) > 0:
+            if 0 < len(nodes) < nodeLimit:
                 address = nodes[random.randint(0, len(nodes) - 1)]
                 msg = "GIVE %s %d %s" % (my_ip, my_port, my_name)
                 sendMessage(msg, address, takeIPsOfPeer)
-            time.sleep(3)
+            time.sleep(4)
 
 
 main()
