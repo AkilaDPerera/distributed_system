@@ -12,6 +12,9 @@ class Address():
         self.ip = ip
         self.port = port
         self.username = username
+
+    def __eq__(self, other):
+        return self.ip==other.ip and self.port==other.ip and self.username==other.username
     
     def __repr__(self):
         return "%s %d"%(self.ip, self.port)
@@ -122,6 +125,8 @@ nodes = []
 
 buffer_size = 2048
 
+nodeLimit = 5
+
 def main():
     global nodes
 
@@ -151,8 +156,21 @@ def main():
                 nodes = addresses
     # Registration with bootstrap done
 
+<<<<<<< efa32c31c5667a9b8befaaf513ced21bbfeea34a
+=======
+    # Start the client-side server
+    server_thread = Server(client_nodes[client_no])
+    server_thread.start()
+
+    gosip=Gather()
+    gosip.start()
+
+    print("continue main thread...")
+
+>>>>>>> Gather operation firs phase
     while True:
         query()
+
 
 
 def show_neighbours():
@@ -179,6 +197,17 @@ def query():
             hi(neighbour)
         except:
             print("Wrong syntax...")
+
+class Gather(threading.Thread):
+    buffer_size = 2048
+
+    def __init__(self):
+        threading.Thread.__init__(self)
+
+    def run(self):
+        print("Gossiping solution start...")
+
+
 
 
 main()
