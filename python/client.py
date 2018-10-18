@@ -44,7 +44,7 @@ class Server(threading.Thread):
                 print("Message received: '%s' \t Address received: %s:%d" % (
                     incoming_msg, incoming_address, incoming_port))
 
-                # server.sendto(response.encode(), address)
+                server.sendto("hi".encode(), address)
 
 
 def decode_reg_response(response):
@@ -99,7 +99,7 @@ def attach_length(message):
     length = len(message) + 5
     return "%04d %s" % (length, message)
 
-my_ip = netifaces.ifaddresses('eth0')[netifaces.AF_INET][0]['addr']  # you need to change eth0 accordingly.
+my_ip = netifaces.ifaddresses('wlp3s0')[netifaces.AF_INET][0]['addr']  # you need to change eth0 accordingly.
 my_port = get_available_port(my_ip)
 my_name = "".join([random.choice(string.ascii_letters) for i in range(5)])
 my_address = Address(my_ip, my_port, my_name)
@@ -256,9 +256,10 @@ class Gather(threading.Thread):
         while True:
             if len(nodes) >= nodeLimit:
                 break
-            address = nodes[random.randint(0, len(nodes) - 1)]
-            msg = "GIVE %s %d" % (my_ip, my_port)
-            sendMessage(msg, address, takeIPsOfPeer)
+            if len(nodes)>0:
+                address = nodes[random.randint(0, len(nodes) - 1)]
+                msg = "GIVE %s %d" % (my_ip, my_port)
+                sendMessage(msg, address, takeIPsOfPeer)
             time.sleep(3)
 
 
