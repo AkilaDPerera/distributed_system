@@ -3,7 +3,8 @@
 import socket
 import random
 import threading
-import sys
+import netifaces
+import string
 
 class Address():
     def __init__(self, ip, port, username=""):
@@ -70,26 +71,31 @@ def decode_reg_response(response):
         
         return 1, addresses
 
+def get_available_port(ip):
+    init_port = 6000
+    sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+    result = False
+    while True:
+        try:
+            sock.bind((ip, init_port))
+            sock.close()
+            result = True
+            break
+        except:
+            init_port+=1
+    return init_port
 
-client_nodes = [
-    Address("127.0.0.1", 8000, "akila"),
-    Address("127.0.0.1", 8001, "amila"),
-    Address("127.0.0.1", 8002, "eminda"),
-    Address("127.0.0.1", 8003, "eranga"),
-    Address("127.0.0.1", 8004, "dumindu"),
-    Address("127.0.0.1", 8005, "jeevan"),
-]
+def attach_length(message):
+    length = len(message)+5
+    return "%04d %s"%(length, message)
 
-clients_msgs = [
-    b"0029 REG 127.0.0.1 8000 akila",
-    b"0029 REG 127.0.0.1 8001 amila",
-    b"0030 REG 127.0.0.1 8002 eminda",
-    b"0030 REG 127.0.0.1 8003 eranga",
-    b"0031 REG 127.0.0.1 8004 dumindu",
-    b"0030 REG 127.0.0.1 8005 jeevan",
-]
 
-client_no = int(sys.argv[1])
+
+
+my_ip = netifaces.ifaddresses('eth0')[netifaces.AF_INET][0]['addr']
+my_port = get_available_port(my_ip)
+my_name = "".join([random.choice(string.ascii_letters) for i in range(5)])
+my_address = Address(my_ip, my_port, my_name)
 
 nodes = []
 
@@ -98,13 +104,17 @@ buffer_size = 2048
 def main():
     global nodes
 
-    HOST = '127.0.0.1'
-    PORT = 65001 # The port used by the boostrap server
+    # Let's start the listening socket
+    server_thread = Server(my_address)
+    server_thread.start()
 
     # Registration with bootstrap
+    HOST = '192.168.8.103'
+    PORT = 65000 # The port used by the boostrap server
     with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
         s.connect((HOST, PORT))
-        s.sendall(clients_msgs[client_no])
+        reg_msg = "REG %s %d %s"%(my_address.ip, my_address.port, my_address.username)
+        s.sendall(attach_length(reg_msg).encode())
         data = s.recv(buffer_size).decode()
 
         isSuccess, addresses = decode_reg_response(data)
@@ -122,12 +132,6 @@ def main():
                 nodes = addresses
     # Registration with bootstrap done
 
-    # Start the client-side server
-    server_thread = Server(client_nodes[client_no])
-    server_thread.start()
-
-    print("continue main thread...")
-
     while True:
         query()
 
@@ -138,7 +142,7 @@ def show_neighbours():
 def hi(neighbour):
     # Say hi to node
     with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as connection:
-        req = "Hi, I am %s. What is name?"%(client_nodes[client_no].username)
+        req = "Hi, I am %s. What is name?"%(my_address.username)
         connection.sendto(req.encode(), (neighbour.ip, neighbour.port))
 
 def query():
