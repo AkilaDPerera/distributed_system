@@ -30,6 +30,29 @@ class Server(threading.Thread):
         self.ip = address.ip
         self.port = address.port
 
+    def decodeMessage(self, message):
+        res = message.split()
+        if res[1].lower() == 'give':
+            address = Address(res[2], res[3], res[4])
+            addNewNode(address)
+            if len(nodes) > 0:
+                if len(nodes) == 1:
+                    msg = "TAKE 1 %s %d %s" % (nodes[0].ip, nodes[0].port, nodes[0].username)
+                    return msg
+                else:
+                    first = random.randint(0, len(nodes) - 1)
+                    second = -1;
+                    while True:
+                        second = random.randint(0, len(nodes) - 1)
+                        if second != first:
+                            break
+                    msg = "TAKE 2 %s %d %s %s %d %s" % (
+                        nodes[first].ip, nodes[first].port, nodes[first].username, nodes[second].ip, nodes[second].port,
+                        nodes[second].username)
+                    return msg
+        else:
+            return "Hi"
+
     def run(self):
         print("Starting client-side server...")
         with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as server:
@@ -44,7 +67,7 @@ class Server(threading.Thread):
                 print("Message received: '%s' \t Address received: %s:%d" % (
                     incoming_msg, incoming_address, incoming_port))
 
-                server.sendto("hi".encode(), address)
+                server.sendto(attach_length(decode_reg_response(incoming_msg)).encode(), address)
 
 
 def decode_reg_response(response):
@@ -98,6 +121,7 @@ def get_available_port(ip):
 def attach_length(message):
     length = len(message) + 5
     return "%04d %s" % (length, message)
+
 
 my_ip = netifaces.ifaddresses('wlp3s0')[netifaces.AF_INET][0]['addr']  # you need to change eth0 accordingly.
 my_port = get_available_port(my_ip)
@@ -168,11 +192,12 @@ def main():
     while True:
         query()
 
+
 def unreg(address):
     # Unregister from boostrap
     with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
         s.connect((HOST, PORT))
-        reg_msg = "UNREG %s %d %s"%(address.ip, address.port, address.username)
+        reg_msg = "UNREG %s %d %s" % (address.ip, address.port, address.username)
         s.sendall(attach_length(reg_msg).encode())
 
 
@@ -185,7 +210,7 @@ def sendMessage(msg, address, retFun):
     with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as connection:
         connection.settimeout(3)
         for shy in range(2):
-            try: 
+            try:
                 connection.sendto(attach_length(msg).encode(), (address.ip, address.port))
                 res, address = connection.recvfrom(buffer_size)
                 retFun(res.decode())
@@ -194,7 +219,6 @@ def sendMessage(msg, address, retFun):
                 pass
         else:
             unreg(address)
-
 
 
 def show_neighbours():
@@ -228,39 +252,38 @@ def query():
 def addNewNode(address):
     exist = False
     for node in nodes:
-        if node.ip==address.ip and node.port==address.port:
-            exist=True
+        if node.ip == address.ip and node.port == address.port:
+            exist = True
             break
-    if (not exist) and address!=my_address:
+    if (not exist) and address != my_address:
         nodes.append(address)
+
 
 def takeIPsOfPeer(msgRet):
     res = msgRet.split()
     if msgRet[1].lower() == 'take':
         peerCount = int(msgRet[2])
         if peerCount == 2:
-            addNewNode(Address(msgRet[3], msgRet[4]))
-            addNewNode(Address(msgRet[5], msgRet[6]))
+            addNewNode(Address(msgRet[3], msgRet[4], msgRet[5]))
+            addNewNode(Address(msgRet[6], msgRet[7], msgRet[8]))
         elif peerCount == 1:
-            addNewNode(Address(msgRet[3], msgRet[4]))
+            addNewNode(Address(msgRet[3], msgRet[4], msgRet[5]))
 
+    class Gather(threading.Thread):
+        buffer_size = 2048
 
-class Gather(threading.Thread):
-    buffer_size = 2048
+        def __init__(self):
+            threading.Thread.__init__(self)
 
-    def __init__(self):
-        threading.Thread.__init__(self)
+        def run(self):
+            print("Gossiping solution start...")
+            while True:
+                if len(nodes) >= nodeLimit:
+                    break
+                if len(nodes) > 0:
+                    address = nodes[random.randint(0, len(nodes) - 1)]
+                    msg = "GIVE %s %d %s" % (my_ip, my_port, my_name)
+                    sendMessage(msg, address, takeIPsOfPeer)
+                time.sleep(3)
 
-    def run(self):
-        print("Gossiping solution start...")
-        while True:
-            if len(nodes) >= nodeLimit:
-                break
-            if len(nodes)>0:
-                address = nodes[random.randint(0, len(nodes) - 1)]
-                msg = "GIVE %s %d" % (my_ip, my_port)
-                sendMessage(msg, address, takeIPsOfPeer)
-            time.sleep(3)
-
-
-main()
+    main()
