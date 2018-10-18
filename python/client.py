@@ -2,15 +2,41 @@
 
 import socket
 import random
+import threading
+import sys
 
 class Address():
-    def __init__(self, ip, port, username):
+    def __init__(self, ip, port, username=""):
         self.ip = ip
         self.port = port
         self.username = username
     
     def __repr__(self):
         return "%s %d"%(self.ip, self.port)
+
+class Server(threading.Thread):
+    buffer_size = 2048
+
+    def __init__(self, address):
+        threading.Thread.__init__(self)
+        self.ip = address.ip
+        self.port = address.port
+
+    def run(self):
+        print("Starting client-side server...")
+        with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as server:
+            server.bind((self.ip, self.port))
+
+            while True:
+                req, address = server.recvfrom(buffer_size)
+                incoming_msg = req.decode()
+                incoming_address = address[0]
+                incoming_port = int(address[1])
+
+                print("Message received: '%s' \t Address received: %s:%d"%(incoming_msg, incoming_address, incoming_port))
+
+                # server.sendto(response.encode(), address)
+
 
 def decode_reg_response(response):
     res = response.split()
@@ -45,10 +71,14 @@ def decode_reg_response(response):
         return 1, addresses
 
 
-
-
-
-
+client_nodes = [
+    Address("127.0.0.1", 8000, "akila"),
+    Address("127.0.0.1", 8001, "amila"),
+    Address("127.0.0.1", 8002, "eminda"),
+    Address("127.0.0.1", 8003, "eranga"),
+    Address("127.0.0.1", 8004, "dumindu"),
+    Address("127.0.0.1", 8005, "jeevan"),
+]
 
 clients_msgs = [
     b"0029 REG 127.0.0.1 8000 akila",
@@ -59,7 +89,11 @@ clients_msgs = [
     b"0030 REG 127.0.0.1 8005 jeevan",
 ]
 
+client_no = int(sys.argv[1])
+
 nodes = []
+
+buffer_size = 2048
 
 def main():
     global nodes
@@ -67,10 +101,11 @@ def main():
     HOST = '127.0.0.1'
     PORT = 65001 # The port used by the boostrap server
 
+    # Registration with bootstrap
     with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
         s.connect((HOST, PORT))
-        s.sendall(clients_msgs[4])
-        data = s.recv(1024).decode()
+        s.sendall(clients_msgs[client_no])
+        data = s.recv(buffer_size).decode()
 
         isSuccess, addresses = decode_reg_response(data)
 
@@ -85,8 +120,42 @@ def main():
                 nodes.append(addresses[address_2])
             else:
                 nodes = addresses
-        print(addresses)
-        print(nodes)
-        
+    # Registration with bootstrap done
+
+    # Start the client-side server
+    server_thread = Server(client_nodes[client_no])
+    server_thread.start()
+
+    print("continue main thread...")
+
+    while True:
+        query()
+
+
+def show_neighbours():
+    print(nodes)
+
+def hi(neighbour):
+    # Say hi to node
+    with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as connection:
+        req = "Hi, I am %s. What is name?"%(client_nodes[client_no].username)
+        connection.sendto(req.encode(), (neighbour.ip, neighbour.port))
+
+def query():
+    command = input("Enter your command: ").strip().lower()
+
+    if command=="show":
+        show_neighbours()
+
+    elif command.startswith("hi"):
+        cmd_list = command.split()
+        try:
+            ip = cmd_list[1]
+            port = int(cmd_list[2])
+            neighbour = Address(ip, port)
+            hi(neighbour)
+        except:
+            print("Wrong syntax...")
+
 
 main()
