@@ -78,6 +78,8 @@ class Server(threading.Thread):
                     take_res = self.compose_take_response(sender_addr)
                     if take_res!=None:
                         server.sendto(attach_length(take_res).encode(), address)
+                elif req_command=="Hi":
+                    print(incoming_msg)
 
 class Gossiping(threading.Thread):
     def __init__(self):
@@ -89,7 +91,7 @@ class Gossiping(threading.Thread):
             req = "GIVE %s %d %s" % (my_ip, my_port, my_name)
 
             with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as connection:
-                connection.settimeout(3)
+                connection.settimeout(1)
                 for shy in range(2):
                     try:
                         connection.sendto(attach_length(req).encode(), (to.ip, to.port))
@@ -100,6 +102,7 @@ class Gossiping(threading.Thread):
                         pass
                 else:
                     unreg(to)
+                    time.sleep(7) # unreg time penalty
 
     def update_nodes(self, res_of_give):
         res = res_of_give.split()
@@ -132,6 +135,7 @@ class Gossiping(threading.Thread):
 
             elif len(nodes) < node_limit:
                 res = self.request_addresses() # response = None | ACTIVEOK | IPs
+                print(res)
                 if (res!=None):
                     if res.split()[1]!="ACTIVEOK":
                         self.update_nodes(res)
@@ -238,6 +242,11 @@ def show_neighbours():
 def show_me():
     print("My Details: %s %d %s" % (my_ip, my_port, my_name))
 
+def say_hi(address):
+    msg = "Hi my name is %s. What's your's?"%(my_name)
+    with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as connection:
+        connection.sendto(attach_length(msg).encode(), (address.ip, address.port))
+    
 def query():
     command = input("Enter your command: ").strip().lower()
 
@@ -245,6 +254,13 @@ def query():
         show_neighbours()
     elif command=="my":
         show_me()
+    elif command.startswith("hi"): # hi ip port
+        cmmd = command.split()
+        try:
+            add = Address(cmmd[1], int(cmmd[2]))
+            say_hi(add)
+        except:
+            pass
 
 my_ip = netifaces.ifaddresses('eth0')[netifaces.AF_INET][0]['addr']  # you need to change eth0 accordingly.
 my_port = get_available_port(my_ip)
