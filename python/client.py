@@ -183,6 +183,21 @@ class Gossiping(threading.Thread):
     def __init__(self):
         threading.Thread.__init__(self)
 
+    def is_link_connected(self):
+        address = random.choice(nodes)
+        req = "ACTIVE %s %d %s" % (address.ip, address.port, address.username)
+        with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as connection:
+            connection.settimeout(1)
+            for shy in range(2):
+                try:
+                    connection.sendto(attach_length(req).encode(), (address.ip, address.port))
+                    res, address = connection.recvfrom(buffer_size)
+                    break
+                except:
+                    pass
+            else:
+                remove_from_nodes(address)
+
     def request_addresses(self): # GIVE Request
         if len(nodes)>0:
             to = random.choice(nodes)
@@ -223,17 +238,9 @@ class Gossiping(threading.Thread):
         print("Gossiping solution start...")
         while True:
             if len(nodes) >= node_limit:
-                # TODO Let's have a suitable logic here
-
-                # # isactive request should be here                                          TODO
-                # res = self.request_addresses() # response = None | ACTIVEOK | IPs
-                # if (res!=None):
-                #     if res.split()[1]!="ACTIVEOK":
-                #         self.update_nodes(res)
-                # time.sleep(3)
-                print("Exit gossiping...")
-                break
-
+                self.is_link_connected()
+                time.sleep(5)
+                
             elif len(nodes) < node_limit:
                 res = self.request_addresses() # response = None | ACTIVEOK | IPs
                 if (res!=None):
