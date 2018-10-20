@@ -109,6 +109,39 @@ class Server(threading.Thread):
 
         remove_from_nodes(addr)
 
+    def decode_search_request(self, req, server):
+        # length SER IP port file_name hops
+        req = req.split()
+        num_char = int(req.pop(0))
+        command = req.pop(0)
+
+        initiator_ip = req.pop(0)
+        initiator_port = int(req.pop(0))
+        filename = req.pop(0)
+        hops = int(req.pop(0))
+
+        # Check availability of file
+        matching_files = []
+        for f_name in files:
+            if filename.lower() in f_name.lower():
+                matching_files.append(f_name)
+        
+        if len(matching_files)==0:
+            if hops<hops_limit:
+                # pass req to neighbors
+                req2 = "SER %s %d %s %d"%(initiator_ip, initiator_port, filename, hops+1)
+                req2 = attach_length(req2)
+
+                # Send to all neighbors
+                for node in nodes:
+                    server.sendto(req2.encode(), (node.ip, node.port))
+        else:
+            # length SEROK no_files IP port hops filename1 filename2 ... ...
+            res = "SEROK %d %s %d %d "%(len(matching_files), my_address.ip, my_address.port, hops+1)
+            res += " ".join(matching_files)
+            res = attach_length(res)
+            server.sendto(res.encode(), (initiator_ip, initiator_port))
+
     def run(self):
         print("Starting client-side server...")
         with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as server:
@@ -139,7 +172,11 @@ class Server(threading.Thread):
                 elif req_command=="LEAVE":
                     self.decode_leave_request(incoming_msg)
 
-                elif req_command=="Hi":
+                elif req_command=="SER":
+                    self.decode_search_request(incoming_msg, server)
+                
+                elif req_command=="SEROK":
+                    print()
                     print(incoming_msg)
 
 class Gossiping(threading.Thread):
@@ -312,13 +349,34 @@ def main():
 def show_neighbours():
     print(nodes)
 
+def show_files():
+    print(files)
+
 def show_me():
     print("My Details: %s %d %s" % (my_ip, my_port, my_name))
 
-def say_hi(address):
-    msg = "Hi my name is %s. What's your's?"%(my_name)
-    with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as connection:
-        connection.sendto(attach_length(msg).encode(), (address.ip, address.port))
+def search(filename):
+    # first check whether I'm having the file
+    matching_files = []
+    for f_name in files:
+        if filename.lower() in f_name.lower():
+            matching_files.append(f_name)
+
+    if len(matching_files)==0:
+        # length SER IP port file_name hops
+        req = "SER %s %d %s 0"%(my_address.ip, my_address.port, filename)
+        req = attach_length(req)
+        with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as connection:
+            # Send to all neighbors
+            for node in nodes:
+                connection.sendto(req.encode(), (node.ip, node.port))
+    else:
+        # length SEROK no_files IP port hops filename1 filename2 ... ...
+        res = "SEROK %d %s %d %d "%(len(matching_files), my_address.ip, my_address.port, 0)
+        res += " ".join(matching_files)
+        res = attach_length(res)
+        print("\n"+res)
+
     
 def leave():
     global kill_switch
@@ -343,15 +401,48 @@ def query():
         show_neighbours()
     elif command=="my":
         show_me()
+    elif command=="showfiles":
+        show_files()
     elif command=="exit":
         leave()
-    elif command.startswith("hi"): # hi ip port
+    elif command.startswith("search"): # hi ip port
         cmmd = command.split()
         try:
-            add = Address(cmmd[1], int(cmmd[2]))
-            say_hi(add)
+            filename = cmmd[1]
+            search(filename)
         except:
             pass
+
+all_files = [
+    "Adventures of Tintin.jpg",
+    "Jack and Jill.jpg",
+    "Glee.jpg",
+    "The Vampire Diarie.jpg",
+    "King Arthur.jpg",
+    "Windows XP.jpg",
+    "Harry Potter.jpg",
+    "Kung Fu Panda.png",
+    "Lady Gaga.jpg",
+    "Twilight.png",
+    "Windows 8.webp",
+    "Mission Impossible.jpg",
+    "Turn Up The Music.jpg",
+    "Super Mario.jpg",
+    "American Pickers.jpg",
+    "Microsoft Office 2010.jpg",
+    "Happy Feet.jpg",
+    "Modern Family.jpg",
+    "American Idol.jpg",
+    "Hacking for Dummies.jpg",
+]
+
+# select 3-5 files randomly from above
+file_count = random.randint(3, 5)
+files = []
+while len(files)<file_count:
+    filename = random.choice(all_files)
+    if not(filename in files):
+        files.append(filename)
 
 my_ip = netifaces.ifaddresses('eth0')[netifaces.AF_INET][0]['addr']  # you need to change eth0 accordingly.
 my_port = get_available_port(my_ip)
@@ -381,7 +472,9 @@ nodes = []
 
 buffer_size = 2048
 
-node_limit = 10
+node_limit = 3
+
+hops_limit = 3
 
 kill_switch = 0
 
