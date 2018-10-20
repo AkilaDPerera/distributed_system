@@ -20,6 +20,58 @@ class Address():
     def __repr__(self):
         return "%s %d %s" % (self.ip, self.port, self.username)
 
+class LinkTest(threading.Thread):
+    def __init__(self, socket, sender, to):
+        threading.Thread.__init__(self)
+        self.socket = socket
+        self.sender = sender
+        self.to = to
+    
+    def is_link_connected(self, address):
+        req = "ACTIVE %s %d %s" % (address.ip, address.port, address.username)
+        with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as connection:
+            connection.settimeout(1)
+            for shy in range(2):
+                try:
+                    connection.sendto(attach_length(req).encode(), (address.ip, address.port))
+                    res, address = connection.recvfrom(buffer_size)
+                    return True
+                except:
+                    pass
+            else:
+                return False
+
+    def run(self):
+        addresses = nodes[:] # make a copy
+        if (self.sender in addresses): addresses.remove(self.sender) # remove sender from the list
+
+        # check for valid addresses
+        take_addresses = []
+        while len(take_addresses)<2 and len(addresses)>0:
+            addr = random.choice(addresses)
+            is_connected = self.is_link_connected(addr)
+
+            if is_connected: 
+                take_addresses.append(addr)
+            else:
+                remove_from_nodes(addr)
+            
+            addresses.remove(addr)
+        
+        take_res = ""
+        if len(take_addresses)==0:
+            take_res = "ACTIVEOK"
+
+        elif len(take_addresses)==1:
+            take_res = "TAKE 1 %s %d %s"%(take_addresses[0].ip, take_addresses[0].port, take_addresses[0].username)
+
+        elif len(take_addresses)==2:
+            take_res = "TAKE 2 %s %d %s %s %d %s"%(take_addresses[0].ip, take_addresses[0].port, take_addresses[0].username, take_addresses[1].ip, take_addresses[1].port, take_addresses[1].username)
+        
+        self.socket.sendto(attach_length(take_res).encode(), self.to)
+
+    
+
 class Server(threading.Thread):
     def __init__(self, address):
         threading.Thread.__init__(self)
@@ -42,21 +94,20 @@ class Server(threading.Thread):
             nodes.append(addr)
         
         return addr
+    
+    def decode_leave_request(self, req):
+        req = req.split()
 
-    def compose_take_response(self, sender):
-        addresses = nodes[:] # make a copy
-        if (sender in addresses): addresses.remove(sender) # remove sender from the list
+        num_char = int(req.pop(0))
+        command = req.pop(0)
 
-        if len(addresses)==0:
-            return "ACTIVEOK"
-        elif len(addresses)==1:
-            return "TAKE 1 %s %d %s"%(addresses[0].ip, addresses[0].port, addresses[0].username)
-        elif len(addresses)>1:
-            add1 = random.choice(addresses)
-            add2 = random.choice(addresses)
-            while add1==add2:
-                add2 = random.choice(addresses)
-            return "TAKE 2 %s %d %s %s %d %s"%(add1.ip, add1.port, add1.username, add2.ip, add2.port, add2.username)
+        addresses_ip = req.pop(0)
+        addresses_port = int(req.pop(0))
+        addresses_username = req.pop(0)
+
+        addr = Address(addresses_ip, addresses_port, addresses_username)
+
+        remove_from_nodes(addr)
 
     def run(self):
         print("Starting client-side server...")
@@ -73,11 +124,21 @@ class Server(threading.Thread):
                 req_length = int(req[0])
                 req_command = req[1]
 
+                # Check kill switch first
+                if kill_switch==1: 
+                    print("Client-side server shutdown...")
+                    break
+
                 if req_command=="GIVE":
                     sender_addr = self.decode_give_request(incoming_msg)
-                    take_res = self.compose_take_response(sender_addr)
-                    if take_res!=None:
-                        server.sendto(attach_length(take_res).encode(), address)
+                    LinkTest(server, sender_addr, address).start()
+
+                elif req_command=="ACTIVE":
+                    server.sendto(attach_length("ACTIVEOK").encode(), address)
+
+                elif req_command=="LEAVE":
+                    self.decode_leave_request(incoming_msg)
+
                 elif req_command=="Hi":
                     print(incoming_msg)
 
@@ -101,8 +162,7 @@ class Gossiping(threading.Thread):
                     except:
                         pass
                 else:
-                    unreg(to)
-                    time.sleep(7) # unreg time penalty
+                    remove_from_nodes(to)
 
     def update_nodes(self, res_of_give):
         res = res_of_give.split()
@@ -126,29 +186,28 @@ class Gossiping(threading.Thread):
         print("Gossiping solution start...")
         while True:
             if len(nodes) >= node_limit:
-                # isactive request should be here                                          TODO
-                res = self.request_addresses() # response = None | ACTIVEOK | IPs
-                if (res!=None):
-                    if res.split()[1]!="ACTIVEOK":
-                        self.update_nodes(res)
-                time.sleep(3)
+                # TODO Let's have a suitable logic here
+
+                # # isactive request should be here                                          TODO
+                # res = self.request_addresses() # response = None | ACTIVEOK | IPs
+                # if (res!=None):
+                #     if res.split()[1]!="ACTIVEOK":
+                #         self.update_nodes(res)
+                # time.sleep(3)
+                print("Exit gossiping...")
+                break
 
             elif len(nodes) < node_limit:
                 res = self.request_addresses() # response = None | ACTIVEOK | IPs
-                print(res)
                 if (res!=None):
                     if res.split()[1]!="ACTIVEOK":
                         self.update_nodes(res)
-                time.sleep(3)
-
-def unreg(address):
-    global nodes
-    # Unregister from boostrap
-    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
-        s.connect((HOST, PORT))
-        reg_msg = "UNREG %s %d %s" % (address.ip, address.port, address.username)
-        s.sendall(attach_length(reg_msg).encode())
-    nodes.remove(address)
+                time.sleep(5)
+            
+            # Check kill switch
+            if kill_switch==1: 
+                print("Gossiping shutdown...")
+                break
 
 def decode_reg_response(response):
     res = response.split()
@@ -200,6 +259,20 @@ def attach_length(message):
     length = len(message) + 5
     return "%04d %s" % (length, message)
 
+def remove_from_nodes(node_address):
+    try:
+        nodes.remove(node_address)
+    except:
+        pass
+
+def unreg():
+    # Unregister from boostrap
+    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+        s.connect((HOST, PORT))
+        reg_msg = "UNREG %s %d %s" % (my_address.ip, my_address.port, my_address.username)
+        s.sendall(attach_length(reg_msg).encode())
+
+
 def main():
     global nodes
 
@@ -247,6 +320,22 @@ def say_hi(address):
     with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as connection:
         connection.sendto(attach_length(msg).encode(), (address.ip, address.port))
     
+def leave():
+    global kill_switch
+    kill_switch = 1
+
+    # Tell neighbors #length LEAVE IP_address port_no
+    req = "LEAVE %s %d %s"%(my_ip, my_port, my_name)
+    req = attach_length(req)
+    with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as connection:
+        for node in nodes:
+            connection.sendto(req.encode(), (node.ip, node.port))
+
+    # Tell BS
+    unreg()
+    exit(0)
+    
+
 def query():
     command = input("Enter your command: ").strip().lower()
 
@@ -254,6 +343,8 @@ def query():
         show_neighbours()
     elif command=="my":
         show_me()
+    elif command=="exit":
+        leave()
     elif command.startswith("hi"): # hi ip port
         cmmd = command.split()
         try:
@@ -290,6 +381,8 @@ nodes = []
 
 buffer_size = 2048
 
-node_limit = 3
+node_limit = 10
+
+kill_switch = 0
 
 main()
