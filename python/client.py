@@ -167,7 +167,8 @@ class Server(threading.Thread):
         # Check availability of file
         matching_files = []
         for f_name in files:
-            if filename.lower() in f_name.lower():
+            filename_spaces = filename.replace("_", " ")
+            if filename_spaces.lower() in f_name.lower():
                 matching_files.append(f_name)
         
         if len(matching_files)==0:
@@ -384,19 +385,20 @@ def show_me():
 def search(filename):
     # first check whether I'm having the file
     matching_files = []
+    filename_spaces = filename.replace("_", " ")
     for f_name in files:
-        if filename.lower() in f_name.lower():
+        if filename_spaces.lower() in f_name.lower():
             matching_files.append(f_name)
 
-    if len(matching_files)==0:
-        # length SER IP port file_name hops
-        req = "SER %s %d %s 0"%(my_address.ip, my_address.port, filename)
-        req = attach_length(req)
-        with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as connection:
-            # Send to all neighbors
-            for node in nodes:
-                connection.sendto(req.encode(), (node.ip, node.port))
-    else:
+    # length SER IP port file_name hops
+    req = "SER %s %d %s 0"%(my_address.ip, my_address.port, filename)
+    req = attach_length(req)
+    with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as connection:
+        # Send to all neighbors
+        for node in nodes:
+            connection.sendto(req.encode(), (node.ip, node.port))
+            
+    if len(matching_files)>0:
         # length SEROK no_files IP port hops filename1 filename2 ... ...
         res = "SEROK %d %s %d %d "%(len(matching_files), my_address.ip, my_file_server_port, 0)
         res += " ".join(matching_files)
@@ -466,7 +468,7 @@ def query():
     elif command.startswith("search"):
         cmmd = command.split()
         try:
-            filename = cmmd[1]
+            filename = "_".join(cmmd[1:])
             search(filename)
         except:
             pass
