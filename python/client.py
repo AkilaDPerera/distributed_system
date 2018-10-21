@@ -98,6 +98,11 @@ class FileTransfer(threading.Thread):
                     num_char = int(parts[0])
                     command = parts[1]
 
+                    # Check kill switch
+                    if kill_switch==1: 
+                        print("File transfer server shutdown...")
+                        break
+
                     if command=="DOWNLOAD":
                         filename = parts[2].replace("_", " ")
                         # check availability of file
@@ -111,11 +116,6 @@ class FileTransfer(threading.Thread):
                             res = "Invalid filename"
                             conn.sendall(res.encode())
                 
-                # Check kill switch
-                if kill_switch==1: 
-                    print("File transfer server shutdown...")
-                    break
-
 class Server(threading.Thread):
     def __init__(self, address):
         threading.Thread.__init__(self)
@@ -379,7 +379,7 @@ def show_files():
     print(files)
 
 def show_me():
-    print("My Details: %s %d %s" % (my_ip, my_port, my_name))
+    print("My Details: %s %d %s | FileTPort: %d" % (my_ip, my_port, my_name, my_file_server_port))
 
 def search(filename):
     # first check whether I'm having the file
@@ -407,15 +407,25 @@ def leave():
     global kill_switch
     kill_switch = 1
 
-    # Tell neighbors #length LEAVE IP_address port_no
     req = "LEAVE %s %d %s"%(my_ip, my_port, my_name)
     req = attach_length(req)
-    with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as connection:
+    with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as connection: #UDP socket
+        # shutdown gossiping self destruction
+        # shutdown server (need to trigger)
+        connection.sendto(req.encode(), (my_ip, my_port))
+
+        # Tell neighbors #length LEAVE IP_address port_no
         for node in nodes:
             connection.sendto(req.encode(), (node.ip, node.port))
+        
+    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s: # TCP socket
+        s.connect((my_ip, my_file_server_port))
+        # shutdown file server (need to trigger)
+        s.sendall(req.encode())
 
     # Tell BS
     unreg()
+
     exit(0)
     
 def download(frm, filename):
