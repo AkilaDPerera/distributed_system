@@ -70,7 +70,51 @@ class LinkTest(threading.Thread):
         
         self.socket.sendto(attach_length(take_res).encode(), self.to)
 
+class FileTransfer(threading.Thread):
+    def __init__(self, address):
+        threading.Thread.__init__(self)
+        self.ip = address.ip
+        self.port = address.port
     
+    def is_file_available(self, filename):
+        for f_name in files:
+            if filename.lower()==f_name.lower():
+                return f_name
+        else:
+            return False
+
+    def run(self):
+        print("Starting file transfer server...")
+        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+            s.bind((self.ip, self.port))
+            while True:
+                s.listen()
+                conn, addr = s.accept()
+                with conn:
+                    data = conn.recv(buffer_size)
+                    data = data.decode()
+                    parts = data.split()
+
+                    num_char = int(parts[0])
+                    command = parts[1]
+
+                    if command=="DOWNLOAD":
+                        filename = parts[2].replace("_", " ")
+                        # check availability of file
+                        filename = self.is_file_available(filename)
+    
+                        if filename!=False:
+                            # send file
+                            with open(file_source+filename, 'rb') as f:
+                                conn.sendall(f.read())
+                        else:
+                            res = "Invalid filename"
+                            conn.sendall(res.encode())
+                
+                # Check kill switch
+                if kill_switch==1: 
+                    print("File transfer server shutdown...")
+                    break
 
 class Server(threading.Thread):
     def __init__(self, address):
@@ -137,7 +181,7 @@ class Server(threading.Thread):
                     server.sendto(req2.encode(), (node.ip, node.port))
         else:
             # length SEROK no_files IP port hops filename1 filename2 ... ...
-            res = "SEROK %d %s %d %d "%(len(matching_files), my_address.ip, my_address.port, hops+1)
+            res = "SEROK %d %s %d %d "%(len(matching_files), my_address.ip, my_file_server_port, hops+1)
             res += " ".join(matching_files)
             res = attach_length(res)
             server.sendto(res.encode(), (initiator_ip, initiator_port))
@@ -285,9 +329,21 @@ def decode_reg_response(response):
 
         return 1, addresses
 
-def get_available_port(ip):
-    init_port = 6000
+def get_available_port(ip, init_port):
     sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+    result = False
+    while True:
+        try:
+            sock.bind((ip, init_port))
+            sock.close()
+            result = True
+            break
+        except:
+            init_port += 1
+    return init_port
+
+def get_available_tcp_port(ip, init_port):
+    sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     result = False
     while True:
         try:
@@ -316,6 +372,103 @@ def unreg():
         reg_msg = "UNREG %s %d %s" % (my_address.ip, my_address.port, my_address.username)
         s.sendall(attach_length(reg_msg).encode())
 
+def show_neighbours():
+    print(nodes)
+
+def show_files():
+    print(files)
+
+def show_me():
+    print("My Details: %s %d %s" % (my_ip, my_port, my_name))
+
+def search(filename):
+    # first check whether I'm having the file
+    matching_files = []
+    for f_name in files:
+        if filename.lower() in f_name.lower():
+            matching_files.append(f_name)
+
+    if len(matching_files)==0:
+        # length SER IP port file_name hops
+        req = "SER %s %d %s 0"%(my_address.ip, my_address.port, filename)
+        req = attach_length(req)
+        with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as connection:
+            # Send to all neighbors
+            for node in nodes:
+                connection.sendto(req.encode(), (node.ip, node.port))
+    else:
+        # length SEROK no_files IP port hops filename1 filename2 ... ...
+        res = "SEROK %d %s %d %d "%(len(matching_files), my_address.ip, my_file_server_port, 0)
+        res += " ".join(matching_files)
+        res = attach_length(res)
+        print("\n"+res)
+
+def leave():
+    global kill_switch
+    kill_switch = 1
+
+    # Tell neighbors #length LEAVE IP_address port_no
+    req = "LEAVE %s %d %s"%(my_ip, my_port, my_name)
+    req = attach_length(req)
+    with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as connection:
+        for node in nodes:
+            connection.sendto(req.encode(), (node.ip, node.port))
+
+    # Tell BS
+    unreg()
+    exit(0)
+    
+def download(frm, filename):
+    filename = filename.replace(" ", "_")
+    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+        s.connect((frm.ip, frm.port))
+        req = "DOWNLOAD %s"%(filename)
+        s.sendall(attach_length(req).encode())
+        msg_bytes = []
+        while True:
+            data = s.recv(buffer_size)
+            if not data:
+                break
+            else:
+                msg_bytes.append(data)
+                
+
+        if msg_bytes[0]==b'Invalid filename':
+            print("Invalid Filename. Check the filename and retry.")
+        else:
+            with open(download_loc+filename, "wb") as f:
+                for msg_byte in msg_bytes:
+                    f.write(msg_byte)
+            print("File has been downloaded ...")
+
+
+def query():
+    command = input("Enter your command: ").strip().lower()
+
+    if command=="show":
+        show_neighbours()
+    elif command=="my":
+        show_me()
+    elif command=="showfiles":
+        show_files()
+    elif command=="exit":
+        leave()
+    elif command.startswith("search"):
+        cmmd = command.split()
+        try:
+            filename = cmmd[1]
+            search(filename)
+        except:
+            pass
+    elif command.startswith("download"): # download ip port filename
+        cmmd = command.split()
+        try:
+            ip = cmmd[1]
+            port = int(cmmd[2])
+            filename = " ".join(cmmd[3:])
+            download(Address(ip, port), filename)
+        except:
+            print("Something went wrong. Please check the ip, port and filename again.")
 
 def main():
     global nodes
@@ -345,6 +498,9 @@ def main():
                 nodes = addresses
     # Registration with bootstrap done
 
+    # Let's start file server
+    file_server_thread = FileTransfer(Address(my_ip, my_file_server_port)).start()
+
     # Let's start the gossiping
     gossiping_thread = Gossiping().start()
 
@@ -352,73 +508,6 @@ def main():
 
     while True:
         query()
-
-def show_neighbours():
-    print(nodes)
-
-def show_files():
-    print(files)
-
-def show_me():
-    print("My Details: %s %d %s" % (my_ip, my_port, my_name))
-
-def search(filename):
-    # first check whether I'm having the file
-    matching_files = []
-    for f_name in files:
-        if filename.lower() in f_name.lower():
-            matching_files.append(f_name)
-
-    if len(matching_files)==0:
-        # length SER IP port file_name hops
-        req = "SER %s %d %s 0"%(my_address.ip, my_address.port, filename)
-        req = attach_length(req)
-        with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as connection:
-            # Send to all neighbors
-            for node in nodes:
-                connection.sendto(req.encode(), (node.ip, node.port))
-    else:
-        # length SEROK no_files IP port hops filename1 filename2 ... ...
-        res = "SEROK %d %s %d %d "%(len(matching_files), my_address.ip, my_address.port, 0)
-        res += " ".join(matching_files)
-        res = attach_length(res)
-        print("\n"+res)
-
-    
-def leave():
-    global kill_switch
-    kill_switch = 1
-
-    # Tell neighbors #length LEAVE IP_address port_no
-    req = "LEAVE %s %d %s"%(my_ip, my_port, my_name)
-    req = attach_length(req)
-    with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as connection:
-        for node in nodes:
-            connection.sendto(req.encode(), (node.ip, node.port))
-
-    # Tell BS
-    unreg()
-    exit(0)
-    
-
-def query():
-    command = input("Enter your command: ").strip().lower()
-
-    if command=="show":
-        show_neighbours()
-    elif command=="my":
-        show_me()
-    elif command=="showfiles":
-        show_files()
-    elif command=="exit":
-        leave()
-    elif command.startswith("search"): # hi ip port
-        cmmd = command.split()
-        try:
-            filename = cmmd[1]
-            search(filename)
-        except:
-            pass
 
 all_files = [
     "Adventures of Tintin.jpg",
@@ -451,8 +540,12 @@ while len(files)<file_count:
     if not(filename in files):
         files.append(filename)
 
+file_source = "./files/"
+download_loc = "./download/"
+
 my_ip = netifaces.ifaddresses('eth0')[netifaces.AF_INET][0]['addr']  # you need to change eth0 accordingly.
-my_port = get_available_port(my_ip)
+my_port = get_available_port(my_ip, 6000)
+my_file_server_port = get_available_tcp_port(my_ip, 9000)
 my_name = "".join([random.choice(string.ascii_letters) for i in range(5)])
 my_address = Address(my_ip, my_port, my_name)
 
