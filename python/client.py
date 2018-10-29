@@ -149,7 +149,7 @@ def main():
 
     print("continue main thread...")
 
-    while True:
-        query()
+    # while True:
+    #     query()
 
 main()

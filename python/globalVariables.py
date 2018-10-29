@@ -163,8 +163,8 @@ def download(frm, filename):
             print("File has been downloaded ...")
 
 
-def query():
-    command = input("Enter your command: ").strip().lower()
+def query(command):
+    # command = input("Enter your command: ").strip().lower()
 
     if command=="show":
         show_neighbours()
@@ -226,7 +226,7 @@ while len(files)<file_count:
 file_source = "./files/"
 download_loc = "./download/"
 
-my_ip = netifaces.ifaddresses('enp0s20u1')[netifaces.AF_INET][0]['addr']  # you need to change eth0 accordingly.
+my_ip = netifaces.ifaddresses('wlp2s0')[netifaces.AF_INET][0]['addr']  # you need to change eth0 accordingly.
 my_port = get_available_port(my_ip, 6000)
 my_file_server_port = get_available_tcp_port(my_ip, 9000)
 my_name = "".join([random.choice(string.ascii_letters) for i in range(5)])
