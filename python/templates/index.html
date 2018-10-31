@@ -13,8 +13,12 @@
                 </div>
                 <div class="col-12 col-md-4">
                     <button data-toggle="collapse" class="btn btn-primary btn-lg" data-target="#search">SEARCH</button>
-                    <div id="search" class="collapse">
+                    <div id="search" class="collapse" >
                         <form action="{{ url_for('search_files') }}" method="post">
+                            <div class="form-group">
+                                <label for="filename">File Name</label>
+                                <input type="text" class="form-control" name="filename" id="filename" aria-describedby="emailHelp" placeholder="Enter Name">
+                            </div>
                             <button type="submit" class="btn btn-primary btn-lg">APPLY</button>
                         </form>
                     </div>
@@ -29,11 +33,24 @@
                 </div>
             </div>
         </div>
-        {% for result in data %}
-            <tr>
-                <td>{{ result }}</td>
-            </tr>
-{% endfor %}
+        <div>
+            {% if data %}
+                <table class="table">
+                    <thead>
+                        <tr>
+                        <th scope="col">Node</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for result in data %}
+                        <tr>
+                            <td>{{ result }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            {% endif %}
+        </div>
         <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.12.4/jquery.min.js"></script>
         <script src="static/js/bootstrap.min.js"></script>
     </body>

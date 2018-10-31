@@ -1,5 +1,5 @@
 from flask import Flask, request, render_template
-from globalVariables import *
+from client import *
 app = Flask(__name__)
 
 @app.route("/")
@@ -12,7 +12,8 @@ def show_nodes():
 
 @app.route("/search_files", methods=['POST'])
 def search_files(): 
-    return render_template('index.html', data = [12, 45])
+    # print(request.form["filename"])
+    return render_template('index.html', data = query("showfiles"))
 
 # if __name__ == '__main__':
 app.run(host= my_ip, port=my_file_server_port)
