@@ -25,8 +25,16 @@
                 </div>
                 <div class="col-12 col-md-4">
                     <button data-toggle="collapse" class="btn btn-primary btn-lg" data-target="#download">DOWNLOAD</button>
-                    <div id="download" class="collapse">
-                        <form action="{{ url_for('search_files') }}" method="post">
+                    <div id="download" class="collapse" >
+                        <form action="{{ url_for('download_file') }}" method="post">
+                            <div class="form-group">
+                                <label for="ip">IP</label>
+                                <input type="text" class="form-control" name="ip" id="ip" aria-describedby="emailHelp" placeholder="Enter Name">
+                                <label for="port">Port</label>
+                                <input type="text" class="form-control" name="port" id="port" aria-describedby="emailHelp" placeholder="Enter Name">
+                                <label for="filename">File Name</label>
+                                <input type="text" class="form-control" name="filename" id="filename" aria-describedby="emailHelp" placeholder="Enter Name">
+                            </div>
                             <button type="submit" class="btn btn-primary btn-lg">APPLY</button>
                         </form>
                     </div>

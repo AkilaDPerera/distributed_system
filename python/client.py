@@ -212,6 +212,7 @@ class Server(threading.Thread):
                 elif req_command=="SEROK":
                     print()
                     print(incoming_msg)
+                    files_hit.append(incoming_msg)
 
 class Gossiping(threading.Thread):
     def __init__(self):
@@ -374,6 +375,7 @@ def show_me():
 def search(filename):
     # first check whether I'm having the file
     matching_files = []
+    del files_hit[:] 
     filename_spaces = filename.replace("_", " ")
     for f_name in files:
         if filename_spaces.lower() in f_name.lower():
@@ -392,7 +394,11 @@ def search(filename):
         res = "SEROK %d %s %d %d "%(len(matching_files), my_address.ip, my_file_server_port, 0)
         res += " ".join(matching_files)
         res = attach_length(res)
+        files_hit.append(res)
         print("\n"+res)
+    # time out to wait for search
+    time.sleep(3)
+    return files_hit
 
 def leave():
     global kill_switch
@@ -435,12 +441,13 @@ def download(frm, filename):
                 
 
         if msg_bytes[0]==b'Invalid filename':
-            print("Invalid Filename. Check the filename and retry.")
+            return ("Invalid Filename. Check the filename and retry.")
         else:
             with open(download_loc+filename, "wb") as f:
                 for msg_byte in msg_bytes:
                     f.write(msg_byte)
-            print("File has been downloaded ...")
+            return msg_bytes
+            # print("File has been downloaded ...")
 
 
 def query(command):
@@ -458,7 +465,7 @@ def query(command):
         cmmd = command.split()
         try:
             filename = "_".join(cmmd[1:])
-            search(filename)
+            return search(filename)
         except:
             pass
     elif command.startswith("download"): # download ip port filename
@@ -467,7 +474,7 @@ def query(command):
             ip = cmmd[1]
             port = int(cmmd[2])
             filename = " ".join(cmmd[3:])
-            download(Address(ip, port), filename)
+            return download(Address(ip, port), filename)
         except:
             print("Something went wrong. Please check the ip, port and filename again.")
 
@@ -546,7 +553,8 @@ download_loc = "./download/"
 
 my_ip = netifaces.ifaddresses('wlp2s0')[netifaces.AF_INET][0]['addr']  # you need to change eth0 accordingly.
 my_port = get_available_port(my_ip, 6000)
-my_file_server_port = get_available_tcp_port(my_ip, 9000)
+my_file_server_port = get_available_tcp_port(my_ip, 9500)
+my_web_server_port = get_available_tcp_port(my_ip, 9000)
 my_name = "".join([random.choice(string.ascii_letters) for i in range(5)])
 my_address = Address(my_ip, my_port, my_name)
 
@@ -571,6 +579,8 @@ elif len(sys.argv) == 2:
 
 nodes = []
 
+files_hit = []
+
 buffer_size = 2048
 
 node_limit = 3
@@ -579,5 +589,6 @@ hops_limit = 3
 
 kill_switch = 0
 
-main()
-import restAPI
+
+# import restFileServer
+# import restAPI
