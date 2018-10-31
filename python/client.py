@@ -366,7 +366,7 @@ def show_neighbours():
     return nodes
 
 def show_files():
-    return files
+    print(files)
 
 def show_me():
     print("My Details: %s %d %s | FileTPort: %d" % (my_ip, my_port, my_name, my_file_server_port))
@@ -451,7 +451,7 @@ def query(command):
     elif command=="my":
         show_me()
     elif command=="showfiles":
-        return show_files()
+        show_files()
     elif command=="exit":
         leave()
     elif command.startswith("search"):

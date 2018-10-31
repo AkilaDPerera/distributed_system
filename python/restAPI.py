@@ -13,7 +13,7 @@ def show_nodes():
 @app.route("/search_files", methods=['POST'])
 def search_files(): 
     # print(request.form["filename"])
-    return render_template('index.html', data = query("showfiles"))
+    return render_template('index.html', data = query("search "+ request.form["filename"]))
 
 # if __name__ == '__main__':
 app.run(host= my_ip, port=my_file_server_port)
