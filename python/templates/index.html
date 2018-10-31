@@ -1,9 +1,40 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
+    <link rel="stylesheet" media="screen" href = "{{ url_for('static', filename='css/bootstrap.min.css') }}">
     <body>
-
-        <h1>My First Heading</h1>
-        <p>My first paragraph.</p>
-
+        
+        <h1>Enter Commands</h1>
+        <div class="container">
+            <div class="row">
+                <div class="col-12 col-md-4">
+                    <form action="{{ url_for('show_nodes') }}" method="post">
+                        <button type="submit" class="btn btn-primary btn-lg">SHOW</button>
+                    </form>
+                </div>
+                <div class="col-12 col-md-4">
+                    <button data-toggle="collapse" class="btn btn-primary btn-lg" data-target="#search">SEARCH</button>
+                    <div id="search" class="collapse">
+                        <form action="{{ url_for('search_files') }}" method="post">
+                            <button type="submit" class="btn btn-primary btn-lg">APPLY</button>
+                        </form>
+                    </div>
+                </div>
+                <div class="col-12 col-md-4">
+                    <button data-toggle="collapse" class="btn btn-primary btn-lg" data-target="#download">DOWNLOAD</button>
+                    <div id="download" class="collapse">
+                        <form action="{{ url_for('search_files') }}" method="post">
+                            <button type="submit" class="btn btn-primary btn-lg">APPLY</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% for result in data %}
+            <tr>
+                <td>{{ result }}</td>
+            </tr>
+{% endfor %}
+        <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.12.4/jquery.min.js"></script>
+        <script src="static/js/bootstrap.min.js"></script>
     </body>
 </html>

@@ -84,6 +84,7 @@ def unreg():
 
 def show_neighbours():
     print(nodes)
+    # return nodes
 
 def show_files():
     print(files)
@@ -163,11 +164,11 @@ def download(frm, filename):
             print("File has been downloaded ...")
 
 
-def query(command):
-    # command = input("Enter your command: ").strip().lower()
+def query():
+    command = input("Enter your command: ").strip().lower()
 
     if command=="show":
-        show_neighbours()
+        return show_neighbours()
     elif command=="my":
         show_me()
     elif command=="showfiles":
