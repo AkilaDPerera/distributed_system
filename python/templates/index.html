@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="en">
+    <link rel="stylesheet" media="screen" href = "{{ url_for('static', filename='css/bootstrap.min.css') }}">
+    <body>
+        <div style="max-height: 80px;padding: 0px 0px 0px 0px;" class="container mh-50">
+            <div class='page-header'>
+                <div class='btn-toolbar pull-right'>
+                    <div class='btn-group'>
+                        <button type='button' class='btn btn-danger'>Kill Node</button>
+                    </div>
+                </div>
+                <h2>Enter Commands</h2>
+            </div>
+        </div>
+        <div class="container">
+            <div class="row justify-content-md-center text-center">
+                <div class="col-lg-4">
+                    <button data-toggle="collapse" class="btn btn-primary btn-lg" data-target="#show">SHOW</button>
+                    <div id="show" class="collapse" >
+                        <p class="font-weight-bold"><strong>Select One</strong></p>
+                        <form action="{{ url_for('show_nodes') }}" method="post">
+                            <button type="submit" name="submit_button" class="btn btn-primary btn-lg" value="show_nodes">Nodes</button>
+                            <button type="submit" name="submit_button" class="btn btn-primary btn-lg" value="show_files">Files</button>
+                        </form>
+                    </div>
+                </div>
+                <div class="col-lg-4">
+                    <button data-toggle="collapse" class="btn btn-primary btn-lg" data-target="#search">SEARCH</button>
+                    <div id="search" class="collapse" >
+                        <form action="{{ url_for('search_files') }}" method="post">
+                            <div class="form-group">
+                                <label for="filename">File Name</label>
+                                <input type="text" class="form-control" name="filename" id="filename" aria-describedby="emailHelp" placeholder="Enter Name">
+                            </div>
+                            <button type="submit" class="btn btn-primary btn-lg">APPLY</button>
+                        </form>
+                    </div>
+                </div>
+                <div class="col-lg-4">
+                    <button data-toggle="collapse" class="btn btn-primary btn-lg" data-target="#download">DOWNLOAD</button>
+                    <div id="download" class="collapse" >
+                        <form action="{{ url_for('download_file') }}" method="post">
+                            <div class="form-group">
+                                <label for="ip">IP</label>
+                                <input type="text" class="form-control" name="ip" id="ip" aria-describedby="emailHelp" placeholder="Enter Name">
+                                <label for="port">Port</label>
+                                <input type="text" class="form-control" name="port" id="port" aria-describedby="emailHelp" placeholder="Enter Name">
+                                <label for="filename">File Name</label>
+                                <input type="text" class="form-control" name="filename" id="filename" aria-describedby="emailHelp" placeholder="Enter Name">
+                            </div>
+                            <button type="submit" class="btn btn-primary btn-lg">APPLY</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div>
+            {% if data %}
+                <table class="table">
+                    <thead>
+                        <tr>
+                        <th scope="col">Node</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for result in data %}
+                        <tr>
+                            <td>{{ result }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            {% endif %}
+        </div>
+        <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.12.4/jquery.min.js"></script>
+        <script src="static/js/bootstrap.min.js"></script>
+    </body>
+</html>
