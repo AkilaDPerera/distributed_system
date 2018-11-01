@@ -7,3 +7,7 @@ fileServer = Flask(__name__)
 def download_files(filename): 
     print(filename)
     return send_file('files/'+ filename, attachment_filename=filename)
+
+@fileServer.route("/favicon.ico", methods=['GET'])
+def davicon():
+    return send_file('static/favicon.ico', attachment_filename='favicon.ico')
