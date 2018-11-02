@@ -369,6 +369,7 @@ def show_neighbours():
 
 def show_files():
     print(files)
+    return files
 
 def show_me():
     print("My Details: %s %d %s | FileTPort: %d" % (my_ip, my_port, my_name, my_file_server_port))
@@ -417,15 +418,13 @@ def leave():
         for node in nodes:
             connection.sendto(req.encode(), (node.ip, node.port))
         
-    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s: # TCP socket
-        s.connect((my_ip, my_file_server_port))
-        # shutdown file server (need to trigger)
-        s.sendall(req.encode())
+    # with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s: # TCP socket
+    #     s.connect((my_ip, my_file_server_port))
+    #     # shutdown file server (need to trigger)
+    #     s.sendall(req.encode())
 
     # Tell BS
     unreg()
-
-    exit(0)
     
 def download(frm, filename):
     filename = filename.replace(" ", "_")
@@ -450,33 +449,6 @@ def download(frm, filename):
                     f.write(msg_byte)
             print("File has been downloaded ...")
 
-def terminalQueries():
-    command = input("Enter your command: ").strip().lower()
-
-    if command=="show":
-        return show_neighbours()
-    elif command=="my":
-        show_me()
-    elif command=="showfiles":
-        show_files()
-    elif command=="exit":
-        leave()
-    elif command.startswith("search"):
-        cmmd = command.split()
-        try:
-            filename = "_".join(cmmd[1:])
-            return search(filename)
-        except:
-            pass
-    elif command.startswith("download"): # download ip port filename
-        cmmd = command.split()
-        try:
-            ip = cmmd[1]
-            port = int(cmmd[2])
-            filename = " ".join(cmmd[3:])
-            return download(Address(ip, port), filename)
-        except:
-            print("Something went wrong. Please check the ip, port and filename again.")
 
 def query(command):
     # command = input("Enter your command: ").strip().lower()
@@ -486,7 +458,7 @@ def query(command):
     elif command=="my":
         show_me()
     elif command=="showfiles":
-        show_files()
+        return show_files()
     elif command=="exit":
         leave()
     elif command.startswith("search"):
