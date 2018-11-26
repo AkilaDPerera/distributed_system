@@ -67,13 +67,19 @@
                     <tbody>
                         {% for result in data %}
                         <tr>
-                            <td>{{ result }}</td>
+                            <td>{{ result }} <button id="{{ result }}" onclick="addToDownloads" type="submit" class="btn btn-success btn-sm">Select to Download</button> </td>
                         </tr>
                         {% endfor %}
                     </tbody>
                 </table>
             {% endif %}
         </div>
+        <!--<script>-->
+
+            <!--function addToDownloads() {-->
+                <!---->
+            <!--}-->
+        <!--</script>-->
         <script src="static/js/jquery.min.js"></script>
         <script src="static/js/bootstrap.min.js"></script>
     </body>
