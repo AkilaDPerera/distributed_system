@@ -27,7 +27,7 @@ def show_nodes():
 
 @app.route("/search_files", methods=['POST'])
 def search_files(): 
-    return render_template('index.html', data = query("search "+ request.form["filename"]))
+    return render_template('index.html', data = query("search "+ request.form["filename"]), formTypeSearch = True)
 
 @app.route("/download_file", methods=['POST'])
 def download_file(): 

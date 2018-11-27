@@ -31,8 +31,8 @@
                     <div id="search" class="collapse" >
                         <form action="{{ url_for('search_files') }}" method="post">
                             <div class="form-group">
-                                <label for="filename">File Name</label>
-                                <input type="text" class="form-control" name="filename" id="filename" aria-describedby="emailHelp" placeholder="Enter Name">
+                                <label for="filenamesearch">File Name</label>
+                                <input type="text" class="form-control" name="filename" id="filenamesearch" aria-describedby="emailHelp" placeholder="Enter Name">
                             </div>
                             <button type="submit" class="btn btn-primary btn-lg">APPLY</button>
                         </form>
@@ -47,8 +47,8 @@
                                 <input type="text" class="form-control" name="ip" id="ip" aria-describedby="emailHelp" placeholder="Enter Name">
                                 <label for="port">Port</label>
                                 <input type="text" class="form-control" name="port" id="port" aria-describedby="emailHelp" placeholder="Enter Name">
-                                <label for="filename">File Name</label>
-                                <input type="text" class="form-control" name="filename" id="filename" aria-describedby="emailHelp" placeholder="Enter Name">
+                                <label for="filenamedownload">File Name</label>
+                                <input type="text" class="form-control" name="filename" id="filenamedownload" aria-describedby="emailHelp" placeholder="Enter Name">
                             </div>
                             <button type="submit" class="btn btn-primary btn-lg">APPLY</button>
                         </form>
@@ -67,13 +67,30 @@
                     <tbody>
                         {% for result in data %}
                         <tr>
+                            {% if formTypeSearch %}
+                            <td>{{ result }} <button id="{{ result }}" onclick="addToDownloads(this.id)" type="submit" class="btn btn-success btn-sm">Select to Download</button> </td>
+                            {% else %}
                             <td>{{ result }}</td>
+                            {% endif %}
                         </tr>
                         {% endfor %}
                     </tbody>
                 </table>
             {% endif %}
         </div>
+        <script>
+
+            function addToDownloads(result) {
+                var filenametoDownload = ""
+                for (var i = 6; i < result.split(" ").length; i++) {
+                    filenametoDownload = filenametoDownload + " " + result.split(" ")[i]
+                }
+                document.getElementById("ip").value = result.split(" ")[3]
+                document.getElementById("port").value = result.split(" ")[4]
+                document.getElementById("filenamedownload").value = filenametoDownload
+                console.log(result)
+            }
+        </script>
         <script src="static/js/jquery.min.js"></script>
         <script src="static/js/bootstrap.min.js"></script>
     </body>
