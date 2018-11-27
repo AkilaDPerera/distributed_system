@@ -551,7 +551,7 @@ while len(files)<file_count:
 file_source = "./files/"
 download_loc = "./download/"
 
-my_ip = netifaces.ifaddresses('wlp2s0')[netifaces.AF_INET][0]['addr']  # you need to change eth0 accordingly.
+my_ip = netifaces.ifaddresses('eth0')[netifaces.AF_INET][0]['addr']  # you need to change eth0 accordingly.
 my_port = get_available_port(my_ip, 6000)
 my_file_server_port = get_available_tcp_port(my_ip, 9500)
 my_web_server_port = get_available_tcp_port(my_ip, 9000)
@@ -588,7 +588,3 @@ node_limit = 3
 hops_limit = 3
 
 kill_switch = 0
-
-
-# import restFileServer
-# import restAPI
