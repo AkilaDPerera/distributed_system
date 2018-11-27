@@ -26,8 +26,17 @@ def show_nodes():
         return render_template('index.html', data = query("showfiles"))
 
 @app.route("/search_files", methods=['POST'])
-def search_files(): 
-    return render_template('index.html', data = query("search "+ request.form["filename"]), formTypeSearch = True)
+def search_files():
+    searchedResults = query("search "+ request.form["filename"])
+    uniqueResults = []
+    ip_set = []
+    for term in searchedResults:
+        termDetails = term.split(' ')
+        ip = termDetails[3]+termDetails[4]
+        if ip not in ip_set:
+            ip_set.append(ip)
+            uniqueResults.append(term)
+    return render_template('index.html', data = uniqueResults, formTypeSearch = True)
 
 @app.route("/download_file", methods=['POST'])
 def download_file(): 

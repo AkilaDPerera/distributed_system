@@ -87,7 +87,7 @@
                 }
                 document.getElementById("ip").value = result.split(" ")[3]
                 document.getElementById("port").value = result.split(" ")[4]
-                document.getElementById("filenamedownload").value = filenametoDownload
+                document.getElementById("filenamedownload").value = filenametoDownload.trim()
                 console.log(result)
             }
         </script>
