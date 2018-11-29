@@ -560,7 +560,7 @@ my_address = Address(my_ip, my_port, my_name)
 # Boostrap server config
 HOST = my_ip
 PORT = 65000
-if len(sys.argv) == 3:
+if len(sys.argv) >= 3:
     # port and ip given
     try:
         PORT = int(sys.argv[1])
