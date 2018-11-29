@@ -3,7 +3,6 @@
 import socket
 import random
 import threading
-import netifaces
 import string
 import sys
 import time
@@ -555,13 +554,15 @@ while len(files)<file_count:
 file_source = "./files/"
 download_loc = "./download/"
 
-my_ip = netifaces.ifaddresses('eth0')[netifaces.AF_INET][0]['addr']  # you need to change eth0 accordingly.
+# my_ip = netifaces.ifaddresses('eth0')[netifaces.AF_INET][0]['addr']  # you need to change eth0 accordingly.
+my_ip = sys.argv[2].strip()
 my_port = get_available_port(my_ip, 6000)
 my_file_server_port = get_available_tcp_port(my_ip, 9000)
 my_name = "".join([random.choice(string.ascii_letters) for i in range(5)])
 my_address = Address(my_ip, my_port, my_name)
 
 # Boostrap server config
+
 HOST = my_ip
 PORT = 65000
 if len(sys.argv) == 3:
