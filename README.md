@@ -16,3 +16,6 @@ python3 shell_client.py 65000 <br/>
 
 # Get permission
 sudo chmod -R a+rwX *
+
+# Run python file 
+python3 shell_client.py port bootsrapIp myIp

@@ -550,7 +550,7 @@ while len(files)<file_count:
 file_source = "./files/"
 download_loc = "./download/"
 
-my_ip = sys.argv[2].strip() # you need to change eth0 accordingly.
+my_ip = sys.argv[3].strip() # you need to change eth0 accordingly.
 my_port = get_available_port(my_ip, 6000)
 my_file_server_port = get_available_tcp_port(my_ip, 9500)
 my_web_server_port = get_available_tcp_port(my_ip, 9000)

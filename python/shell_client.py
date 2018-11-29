@@ -555,7 +555,7 @@ file_source = "./files/"
 download_loc = "./download/"
 
 # my_ip = netifaces.ifaddresses('eth0')[netifaces.AF_INET][0]['addr']  # you need to change eth0 accordingly.
-my_ip = sys.argv[2].strip()
+my_ip = sys.argv[3].strip()
 my_port = get_available_port(my_ip, 6000)
 my_file_server_port = get_available_tcp_port(my_ip, 9000)
 my_name = "".join([random.choice(string.ascii_letters) for i in range(5)])
