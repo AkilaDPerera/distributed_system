@@ -28,15 +28,21 @@ class LinkTest(threading.Thread):
     
     def is_link_connected(self, address):
         req = "ACTIVE %s %d %s" % (address.ip, address.port, address.username)
-        with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as connection:
-            connection.settimeout(40)
-            try:
-                connection.sendto(attach_length(req).encode(), (address.ip, address.port))
-                res, address = connection.recvfrom(buffer_size)
-                return True
-            except:
-                print("Error is link connected\n")
-                return False
+        succeeded = False
+        for shy in range(5):
+            with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as connection:
+                connection.settimeout(2)
+                print("connection making Address is_link_connected LinkTest 35")
+                try:
+                    connection.sendto(attach_length(req).encode(), (address.ip, address.port))
+                    res, address = connection.recvfrom(buffer_size)
+                    print("connection successful Address is_link_connected LinkTest 39")
+                    succeeded = True
+                    break
+                except:
+                    print("Error Address is_link_connected LinkTest 43 shy" +  str(shy))
+        return succeeded
+        
 
     def run(self):
         addresses = nodes[:] # make a copy
@@ -160,6 +166,8 @@ class Server(threading.Thread):
         initiator_port = int(req.pop(0))
         filename = req.pop(0)
         hops = int(req.pop(0))
+        
+        print("Touch it...")
 
         # Check availability of file
         matching_files = []
@@ -168,6 +176,7 @@ class Server(threading.Thread):
             if filename_spaces.lower() in f_name.lower():
                 matching_files.append(f_name)
         
+        print(matching_files)
         if len(matching_files)==0:
             if hops<hops_limit:
                 # pass req to neighbors
@@ -182,7 +191,11 @@ class Server(threading.Thread):
             res = "SEROK %d %s %d %d "%(len(matching_files), my_address.ip, my_file_server_port, hops+1)
             res += " ".join(matching_files)
             res = attach_length(res)
-            server.sendto(res.encode(), (initiator_ip, initiator_port))
+            print(res)
+            with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as connection:
+                connection.sendto(res.encode(), (initiator_ip, initiator_port))
+             
+            # server.sendto(res.encode(), (initiator_ip, initiator_port))
 
     def run(self):
         print("Starting client-side server...")
@@ -228,31 +241,39 @@ class Gossiping(threading.Thread):
     def is_link_connected(self):
         address = random.choice(nodes)
         req = "ACTIVE %s %d %s" % (address.ip, address.port, address.username)
-        with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as connection:
-            connection.settimeout(40)
-            try:
-                connection.sendto(attach_length(req).encode(), (address.ip, address.port))
-                res, address = connection.recvfrom(buffer_size)
-                break
-            except:
-                remove_from_nodes(address)
-                print("Gossiping Error is link connected\n")
-                
+        succeeded = False
+        for shy in range(5):
+            with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as connection:
+                connection.settimeout(2)
+                print("Connection making is_link_connected Gossiping ln 241")
+                try:
+                    connection.sendto(attach_length(req).encode(), (address.ip, address.port))
+                    res, address = connection.recvfrom(buffer_size)
+                    print("Connection successful is_link_connected Gossiping ln 245")
+                    succeeded = True
+                    break
+                except:
+                    print("Error Connection making is_link_connected Gossiping 249")
+        if not succeeded:
+            remove_from_nodes(address)
+
 
     def request_addresses(self): # GIVE Request
         if len(nodes)>0:
             to = random.choice(nodes)
             req = "GIVE %s %d %s" % (my_ip, my_port, my_name)
-
-            with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as connection:
-                connection.settimeout(40)
-                try:
-                    connection.sendto(attach_length(req).encode(), (to.ip, to.port))
-                    res, address = connection.recvfrom(buffer_size)
-                    return res.decode()
-                except:
-                    remove_from_nodes(to)
-                    print("Gossiping Error request_address")
+            for shy in range(5):
+                with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as connection:
+                    print("Connection making in request_addresses ln 260")
+                    connection.settimeout(2)
+                    try:
+                        connection.sendto(attach_length(req).encode(), (to.ip, to.port))
+                        res, address = connection.recvfrom(buffer_size)
+                        print("Connection successful is_link_connected Gossiping ln 265")
+                        return res.decode()
+                    except:
+                        print("Error Connection making in request_addresses ln 267")
+            remove_from_nodes(to)
 
     def update_nodes(self, res_of_give):
         res = res_of_give.split()
@@ -277,14 +298,14 @@ class Gossiping(threading.Thread):
         while True:
             if len(nodes) >= node_limit:
                 self.is_link_connected()
-                time.sleep(20)
+                time.sleep(10)
                 
             elif len(nodes) < node_limit:
                 res = self.request_addresses() # response = None | ACTIVEOK | IPs
                 if (res!=None):
                     if res.split()[1]!="ACTIVEOK":
                         self.update_nodes(res)
-                time.sleep(20)
+                time.sleep(10)
             
             # Check kill switch
             if kill_switch==1: 
