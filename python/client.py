@@ -17,17 +17,21 @@ class LinkTest(threading.Thread):
     
     def is_link_connected(self, address):
         req = "ACTIVE %s %d %s" % (address.ip, address.port, address.username)
-        with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as connection:
-            connection.settimeout(1)
-            for shy in range(2):
+        succeeded = False
+        for shy in range(5):
+            with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as connection:
+                connection.settimeout(2)
+                print("connection making Address is_link_connected LinkTest 35")
                 try:
                     connection.sendto(attach_length(req).encode(), (address.ip, address.port))
                     res, address = connection.recvfrom(buffer_size)
-                    return True
+                    print("connection successful Address is_link_connected LinkTest 39")
+                    succeeded = True
+                    break
                 except:
-                    pass
-            else:
-                return False
+                    print("Error Address is_link_connected LinkTest 43 shy" +  str(shy))
+        return succeeded
+        
 
     def run(self):
         addresses = nodes[:] # make a copy
@@ -221,35 +225,39 @@ class Gossiping(threading.Thread):
     def is_link_connected(self):
         address = random.choice(nodes)
         req = "ACTIVE %s %d %s" % (address.ip, address.port, address.username)
-        with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as connection:
-            connection.settimeout(1)
-            for shy in range(2):
+        succeeded = False
+        for shy in range(5):
+            with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as connection:
+                connection.settimeout(2)
+                print("Connection making is_link_connected Gossiping ln 241")
                 try:
                     connection.sendto(attach_length(req).encode(), (address.ip, address.port))
                     res, address = connection.recvfrom(buffer_size)
+                    print("Connection successful is_link_connected Gossiping ln 245")
+                    succeeded = True
                     break
                 except:
-                    pass
-            else:
-                remove_from_nodes(address)
+                    print("Error Connection making is_link_connected Gossiping 249")
+        if not succeeded:
+            remove_from_nodes(address)
+
 
     def request_addresses(self): # GIVE Request
         if len(nodes)>0:
             to = random.choice(nodes)
             req = "GIVE %s %d %s" % (my_ip, my_port, my_name)
-
-            with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as connection:
-                connection.settimeout(1)
-                for shy in range(2):
+            for shy in range(5):
+                with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as connection:
+                    print("Connection making in request_addresses ln 260")
+                    connection.settimeout(2)
                     try:
                         connection.sendto(attach_length(req).encode(), (to.ip, to.port))
                         res, address = connection.recvfrom(buffer_size)
+                        print("Connection successful is_link_connected Gossiping ln 265")
                         return res.decode()
-                        break
                     except:
-                        pass
-                else:
-                    remove_from_nodes(to)
+                        print("Error Connection making in request_addresses ln 267")
+            remove_from_nodes(to)
 
     def update_nodes(self, res_of_give):
         res = res_of_give.split()
@@ -274,14 +282,14 @@ class Gossiping(threading.Thread):
         while True:
             if len(nodes) >= node_limit:
                 self.is_link_connected()
-                time.sleep(5)
+                time.sleep(10)
                 
             elif len(nodes) < node_limit:
                 res = self.request_addresses() # response = None | ACTIVEOK | IPs
                 if (res!=None):
                     if res.split()[1]!="ACTIVEOK":
                         self.update_nodes(res)
-                time.sleep(5)
+                time.sleep(10)
             
             # Check kill switch
             if kill_switch==1: 
@@ -399,7 +407,7 @@ def search(filename):
             files_hit.append(res)
         print("\n"+res)
     # time out to wait for search
-    time.sleep(3)
+    time.sleep(5)
     return files_hit
 
 def leave():

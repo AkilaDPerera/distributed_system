@@ -1,5 +1,0 @@
-
-Flask==1.0.2
-Jinja2==2.10
-requests==2.20.1
-netifaces==0.10.7
