@@ -1,5 +1,5 @@
 python3 is required to run the system.
-Since there is a user interface following two modules should be installed
+Since there is a user interface, following two modules should be installed
 if they are not already present.
 
 1. flask
