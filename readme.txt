@@ -1,0 +1,1 @@
+python3 shell_client.py port bootsrapIp myIp
